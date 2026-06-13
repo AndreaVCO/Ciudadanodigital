@@ -819,7 +819,7 @@ function showFinal() {
 
 function restartGame() {
   state = { completed: [], scores: {}, currentZone: null, gameScore: 0, totalScore: 0, feedbackQueue: [] };
-  saveState();
+  try { localStorage.removeItem('cdState'); } catch(e){}
   showScreen('screen-intro');
 }
 
@@ -903,10 +903,40 @@ function addScore(pts) {
 
 function completeZone(maxScore) {
   const zone = state.currentZone;
+  const pct = state.gameScore / maxScore;
+
+  if (pct < 0.6) {
+    renderRetry(zone, maxScore);
+    return;
+  }
+
   if (!state.completed.includes(zone.id)) state.completed.push(zone.id);
   state.scores[zone.id] = { earned: state.gameScore, max: maxScore };
   saveState();
   renderProtocol(zone);
+}
+
+function renderRetry(zone, maxScore) {
+  const earned = state.gameScore;
+  const needed = Math.ceil(maxScore * 0.6);
+  const body = document.getElementById('game-body');
+  body.innerHTML = `
+    <div style="background:linear-gradient(135deg,#e05a2b,#c0392b);border-radius:16px;padding:24px;text-align:center;color:white;margin-bottom:16px">
+      <div style="font-size:3rem;margin-bottom:8px">😅</div>
+      <h2 style="font-family:'Fredoka One',cursive;font-size:1.6rem;margin-bottom:6px">¡Casi!</h2>
+      <p style="opacity:0.9;font-size:0.95rem">Necesitas al menos el 60% para avanzar.</p>
+      <div style="background:rgba(255,255,255,0.2);border-radius:12px;padding:12px;margin:14px 0">
+        <div style="font-family:'Fredoka One',cursive;font-size:2rem">${earned} / ${maxScore} pts</div>
+        <div style="font-size:0.85rem;opacity:0.85">Mínimo requerido: ${needed} pts</div>
+      </div>
+      <p style="font-size:0.88rem;opacity:0.85">Revisa el feedback de cada pregunta e inténtalo de nuevo. ¡Tú puedes!</p>
+    </div>
+    <div style="text-align:center">
+      <button class="btn-main" onclick="startZone(state.currentZone)">🔄 Intentar de nuevo</button>
+      <br>
+      <button class="btn-secondary" onclick="showMap()" style="margin-top:10px">Volver al mapa</button>
+    </div>
+  `;
 }
 
 // =================== PROTOCOL RENDERER ===================
@@ -924,16 +954,17 @@ const PROTOCOLS = {
     contacts: ["Fiscalía: 1800-DELITO", "DINAPEN: 101", "MIES: 1800-4-MIES", "ECU911: 911"]
   },
   2: {
-    title: "¿Viviste acoso digital o ciberbullying?",
-    body: "Si recibes amenazas, insultos, difusión de imágenes privadas o acoso en redes sociales, tienes derecho a protección legal.",
+    title: "Protección de datos y relaciones digitales",
+    body: "Si alguien usó tu información sin permiso, publicó contenido tuyo, o te acosó digitalmente, puedes actuar. No estás solo/a.",
     steps: [
-      "Guarda evidencia: capturas de pantalla de los mensajes y publicaciones.",
-      "Bloquea a la persona que te acosa en todas las plataformas.",
-      "Cuéntaselo a un adulto de confianza de inmediato.",
-      "Presenta una denuncia en la Fiscalía (delito de acoso sexual digital o ciberacoso).",
-      "Si eres menor de edad, acude con un adulto al DECE de tu institución educativa.",
+      "No borres la evidencia: guarda capturas, enlaces, chats y registra fechas. Es clave para cualquier denuncia.",
+      "Bloquea y protégete: bloquea a la persona agresora, ajusta tu privacidad y cambia contraseñas si hay riesgo.",
+      "No respondas con agresión: evita insultar de vuelta o difundir más contenido. Puede empeorar tu situación.",
+      "Busca apoyo: habla con familia, docentes, el DECE o un/a psicólogo/a. No debes manejarlo solo/a.",
+      "Denuncia: acude a la Fiscalía, la Unidad de Ciberdelitos de la Policía Nacional o usa la plataforma en línea de la Fiscalía.",
+      "Si fue en redes sociales: reporta la cuenta en la plataforma, solicita eliminación del contenido y guarda confirmación del reporte.",
     ],
-    contacts: ["Fiscalía: 1800-DELITO", "Línea de ayuda MIES: 1800-4-MIES", "ECU911: 911", "Defensoría del Pueblo: 1800-PUEBLO"]
+    contacts: ["Fiscalía: 1800-DELITO", "Policía Nacional: 101", "ECU911: 911", "Defensoría del Pueblo: 1800-PUEBLO"]
   },
   3: {
     title: "¿Fuiste víctima de desinformación o fraude digital?",
@@ -976,7 +1007,7 @@ const PROTOCOLS = {
 function renderProtocol(zone) {
   const proto = PROTOCOLS[zone.id];
   const body = document.getElementById('game-body');
-  const allDone = state.completed.length === ZONES.length;
+  const allDone = ZONES.every(z => state.completed.includes(z.id));
 
   body.innerHTML = `
     <div class="zone-complete-banner">
@@ -1054,7 +1085,7 @@ function startMemory() {
   const body = document.getElementById('game-body');
   body.innerHTML = `
     <div class="mem-instructions">
-      En internet, cada acción tiene una consecuencia. Voltea las tarjetas y empareja cada riesgo digital con lo que puede provocar. <strong>¿Reconoces los peligros antes de que sea tarde?</strong>
+      En internet, cada dato que compartes tiene un riesgo. Voltea las tarjetas y encuentra las parejas. <strong>¿Sabes qué puede pasar si no proteges tu información?</strong>
     </div>
     <div class="memory-grid" id="mem-grid"></div>
     <div id="mem-match-info"></div>
@@ -1103,7 +1134,7 @@ function flipMemCard(idx) {
           ${termCard.text} = ${defCard.text}
         </div>`;
       showFeedback(true, termCard.article,
-        `¡Bien! ${termCard.text.replace(/^\S+ /, '')} es ${defCard.text.toLowerCase()}.`,
+        `${termCard.text} → ${defCard.text}`,
         () => {
           renderMemGrid();
           if (memMatched.length === MEMORY_PAIRS.length) {
@@ -1129,55 +1160,105 @@ function flipMemCard(idx) {
 // =============================================
 const SEMAFORO_SCENARIOS = [
   {
-    text: "Tu compañero/a te manda una foto comprometedora de otra persona del colegio por WhatsApp y te pide que la reenvíes.",
-    correct: 'rojo',
-    article: "Art. 178 COIP – Violación a la intimidad: compartir imágenes de otras personas sin su consentimiento es delito y puede tener consecuencias penales.",
+    text: "Pido permiso antes de publicar una foto donde aparece otra persona.",
+    correct: 'verde',
+    article: "Constitución del Ecuador, Art. 66 num. 19 y LOPDP Art. 4: la imagen de una persona es un dato personal. Publicarla sin consentimiento viola sus derechos.",
     explanations: {
-      verde: "Reenviar esa imagen es participar en el daño a esa persona. Aunque no la tomaste tú, tu acción contribuye al problema.",
-      amarillo: "Hablar antes de actuar es mejor. Debes negarte a reenviarla y reportarlo.",
-      rojo: "¡Correcto! Nunca debes reenviar imágenes comprometedoras de otras personas. Debes negarte y reportar al docente o a un adulto."
+      verde: "¡Correcto! Es legal y respetuoso. La imagen de cada persona le pertenece y necesita dar su permiso para que la publiques.",
+      amarillo: "Pedir permiso no tiene ningún riesgo — es lo correcto y lo legal. No hay zona gris aquí.",
+      rojo: "Pedir permiso es exactamente lo que la ley exige. Es una conducta sana, no peligrosa."
     }
   },
   {
-    text: "Alguien que conociste solo en línea te pide tu dirección de casa porque quiere 'sorprenderte con un regalo'.",
-    correct: 'rojo',
-    article: "Art. 173 COIP – Contacto con finalidad sexual con menores de 18 años: compartir tu ubicación con desconocidos puede exponerte a situaciones de riesgo.",
+    text: "Me retiro de una conversación digital cuando se vuelve agresiva.",
+    correct: 'verde',
+    article: "Constitución del Ecuador, Art. 66 num. 20: tienes derecho a tu bienestar e intimidad personal, incluyendo protegerte de entornos digitales hostiles.",
     explanations: {
-      verde: "Dar tu dirección a desconocidos en línea es muy peligroso, aunque parezcan amables.",
-      amarillo: "Dudar está bien, pero lo correcto es negarse completamente y contarle a un adulto de confianza.",
-      rojo: "¡Correcto! Nunca compartas tu dirección con personas que conociste solo en internet. Cuéntaselo a un adulto."
+      verde: "¡Correcto! Retirarte es una decisión sana y valiente. Proteger tu bienestar en línea también es un derecho.",
+      amarillo: "No hay riesgo en retirarte. Es la respuesta más inteligente ante una conversación tóxica.",
+      rojo: "Alejarte de una situación agresiva no es huir — es cuidarte. Es lo más recomendado."
     }
   },
   {
-    text: "Tu mejor amigo/a te comparte la contraseña de su cuenta de streaming para que puedas usarla cuando quieras.",
+    text: "Denuncio una cuenta que difunde acoso u odio hacia una persona.",
+    correct: 'verde',
+    article: "COIP, Art. 396 – Acoso: el acoso digital es un delito. Denunciarlo en la plataforma y ante la Fiscalía es un acto de ciudadanía digital responsable.",
+    explanations: {
+      verde: "¡Correcto! Denunciar el acoso protege a la víctima y activa los mecanismos legales. Es una conducta cívica y necesaria.",
+      amarillo: "Denunciar no tiene riesgos. Si ves acoso, tienes la responsabilidad de reportarlo.",
+      rojo: "Denunciar el acoso es exactamente lo correcto. No hacerlo puede permitir que el daño continúe."
+    }
+  },
+  {
+    text: "Publico fotos o videos privados de alguien sin pedirle permiso.",
+    correct: 'rojo',
+    article: "COIP, Art. 178 – Violación a la intimidad: difundir imágenes o videos de otra persona sin consentimiento está sancionado con prisión. No importa si la foto parece inocente.",
+    explanations: {
+      verde: "Esto es un delito. Publicar contenido de alguien sin su permiso viola su intimidad, aunque no parezca comprometedor.",
+      amarillo: "No hay zona gris: publicar sin permiso es ilegal. El consentimiento no es opcional.",
+      rojo: "¡Correcto! El Art. 178 del COIP lo sanciona. Siempre necesitas el permiso de la persona antes de publicar."
+    }
+  },
+  {
+    text: "Reviso el celular o las redes de otra persona sin que me lo autorice.",
+    correct: 'rojo',
+    article: "Constitución del Ecuador, Art. 66 num. 21: el secreto de las comunicaciones es un derecho fundamental. Acceder sin permiso — aunque sea tu pareja o amigo/a — es ilegal.",
+    explanations: {
+      verde: "Revisar el celular de alguien sin permiso viola su privacidad. No importa la razón o la relación que tengas.",
+      amarillo: "No existe justificación para acceder a cuentas o mensajes ajenos sin autorización. Es ilegal.",
+      rojo: "¡Correcto! La Constitución protege las comunicaciones privadas. Ninguna razón lo justifica."
+    }
+  },
+  {
+    text: "Difundo conversaciones privadas de alguien para exponerlo o humillarlo.",
+    correct: 'rojo',
+    article: "COIP, Art. 178 – Violación a la intimidad y Art. 396 – Acoso: difundir conversaciones privadas con intención de dañar combina dos delitos sancionados en Ecuador.",
+    explanations: {
+      verde: "Exponer conversaciones privadas para humillar es violencia digital. Es un delito con consecuencias penales.",
+      amarillo: "Esto va más allá de un riesgo ético: es una conducta ilegal que puede derivar en denuncia formal.",
+      rojo: "¡Correcto! Es una de las formas más comunes de acoso digital. Está sancionado por el COIP."
+    }
+  },
+  {
+    text: "Suplanto la identidad de alguien creando un perfil falso con su nombre y fotos.",
+    correct: 'rojo',
+    article: "COIP, Art. 212 – Suplantación de identidad: crear perfiles falsos usando datos de otra persona es un delito sancionado con hasta 3 años de prisión en Ecuador.",
+    explanations: {
+      verde: "Crear un perfil falso con datos reales de otra persona es un delito grave, sin importar la intención.",
+      amarillo: "No existe zona gris. La suplantación de identidad digital es un delito tipificado en el COIP.",
+      rojo: "¡Correcto! El Art. 212 del COIP lo sanciona. Es un delito aunque sea 'de broma'."
+    }
+  },
+  {
+    text: "Reenvío mensajes virales o cadenas sin verificar si son verdaderos.",
     correct: 'amarillo',
-    article: "Términos de uso de plataformas: compartir contraseñas puede violar los términos de servicio. Además, tener acceso a cuentas ajenas crea situaciones de riesgo para ambos.",
+    article: "LOPDP, Art. 10 – Principio de consentimiento: difundir información sin verificar puede dañar la reputación de personas reales y contribuir a la desinformación.",
     explanations: {
-      verde: "Aunque sea tu mejor amigo/a, usar contraseñas ajenas puede causar problemas de privacidad y no es una práctica recomendada.",
-      amarillo: "¡Bien pensado! Puedes agradecerle, pero es mejor explicarle que compartir contraseñas no es la mejor práctica digital.",
-      rojo: "No es un delito entre amigos, pero sí es una práctica de riesgo. El semáforo amarillo (precaución y conversación) es lo más apropiado."
+      verde: "Reenviar sin verificar puede causar daño real: desinformación, pánico o difamación de personas inocentes.",
+      amarillo: "¡Correcto! Es un riesgo ético. Antes de reenviar, pregúntate: ¿es verdad? ¿puede dañar a alguien?",
+      rojo: "No es un delito automático, pero sí una conducta irresponsable. El amarillo es lo más preciso."
     }
   },
   {
-    text: "Ves en redes sociales que tus compañeros/as están creando un grupo para publicar memes burlones sobre un estudiante de tu clase.",
-    correct: 'rojo',
-    article: "Art. 180 COIP – Difamación. Art. 396 COIP – Acoso. La Ley Orgánica de Educación Intercultural también prohíbe el acoso escolar, incluyendo el ciberbullying.",
-    explanations: {
-      verde: "Participar o silenciarte ante el ciberbullying hace que seas parte del problema, aunque no seas quien lo inicia.",
-      amarillo: "Reflexionar está bien, pero aquí la acción correcta es clara: no participar y reportarlo.",
-      rojo: "¡Correcto! No participar y reportarlo a un docente o DECE es lo correcto. El ciberbullying es acoso escolar y tiene consecuencias legales."
-    }
-  },
-  {
-    text: "Una aplicación gratuita te pide permiso para acceder a tu micrófono, cámara, ubicación y lista de contactos.",
+    text: "Comento en redes sin pensar cómo mis palabras pueden afectar a otra persona.",
     correct: 'amarillo',
-    article: "LOPDP – Ley Orgánica de Protección de Datos Personales, Ecuador: tienes derecho a saber por qué una app necesita tus datos y a negarte si los permisos no son razonables.",
+    article: "COIP, Art. 180 – Difamación: comentarios que dañen la reputación de alguien pueden constituir difamación, incluso en redes sociales y aunque sean 'de broma'.",
     explanations: {
-      verde: "Aceptar todos los permisos sin revisar puede exponer tus datos innecesariamente. Hay que ser cuidadoso.",
-      amarillo: "¡Correcto! Revisa si realmente necesita esos permisos. Solo acepta lo que sea necesario para que funcione.",
-      rojo: "No necesariamente es una app maliciosa, pero sí debes revisar y limitar los permisos que concedes."
+      verde: "Las palabras en internet tienen peso real. Comentar sin pensar puede causar daño emocional serio.",
+      amarillo: "¡Correcto! Riesgo ético. Antes de publicar un comentario, pregúntate: ¿aporta o daña? ¿lo diría en persona?",
+      rojo: "No todo comentario irreflexivo es delito, pero sí puede escalar a una situación legal. El amarillo es lo más preciso."
     }
-  }
+  },
+  {
+    text: "Amenazo o extorsiono a alguien usando información o imágenes digitales.",
+    correct: 'rojo',
+    article: "COIP, Art. 173 y Art. 187 – Extorsión: usar información o imágenes para amenazar o chantajear a alguien es uno de los delitos digitales más graves en Ecuador.",
+    explanations: {
+      verde: "Amenazar o chantajear con información digital es un delito grave con penas de varios años de prisión.",
+      amarillo: "Esto no tiene zona gris. La extorsión digital es ilegal y tiene consecuencias penales severas.",
+      rojo: "¡Correcto! Es uno de los delitos digitales más graves. Si lo vives o lo conoces, denuncia de inmediato en la Fiscalía."
+    }
+  },
 ];
 
 let semIdx = 0;
@@ -1195,23 +1276,46 @@ function renderSemaforo() {
   const s = SEMAFORO_SCENARIOS[semIdx];
   const body = document.getElementById('game-body');
   body.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
+      <div style="display:flex;align-items:flex-start;gap:10px;background:#d4edda;border-radius:10px;padding:10px 12px">
+        <span style="font-size:1.2rem;flex-shrink:0">🟢</span>
+        <div>
+          <strong style="font-size:0.82rem;color:#1a5c2e;display:block">Legal</strong>
+          <span style="font-size:0.78rem;color:#1a5c2e;line-height:1.4">Conducta permitida y respetuosa. Está dentro de la ley y cuida los derechos de todos.</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:10px;background:#fef6dc;border-radius:10px;padding:10px 12px">
+        <span style="font-size:1.2rem;flex-shrink:0">🟡</span>
+        <div>
+          <strong style="font-size:0.82rem;color:#7a5500;display:block">Riesgo ético</strong>
+          <span style="font-size:0.78rem;color:#7a5500;line-height:1.4">No es un delito, pero puede causar daño. Hay que pensarlo dos veces antes de actuar.</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:10px;background:#fde8e6;border-radius:10px;padding:10px 12px">
+        <span style="font-size:1.2rem;flex-shrink:0">🔴</span>
+        <div>
+          <strong style="font-size:0.82rem;color:#c0392b;display:block">Ilegal</strong>
+          <span style="font-size:0.78rem;color:#922b21;line-height:1.4">Viola la ley y puede tener consecuencias penales. Está sancionado en Ecuador.</span>
+        </div>
+      </div>
+    </div>
     <div style="font-size:0.82rem;color:#666;margin-bottom:8px">Situación ${semIdx+1} de ${SEMAFORO_SCENARIOS.length}</div>
     <div class="semaforo-scenario">
-      <div class="scenario-label">🚦 ¿Cómo reaccionas?</div>
+      <div class="scenario-label">🚦 ¿Cómo clasificas esta conducta?</div>
       <div class="scenario-text">${s.text}</div>
       <div class="semaforo-btns">
         <button class="sem-btn sem-verde" onclick="answerSemaforo('verde')">
-          🟢 <span class="sem-label">Lo hago / no hay problema</span>
+          🟢 <span class="sem-label">Legal</span>
         </button>
         <button class="sem-btn sem-amarillo" onclick="answerSemaforo('amarillo')">
-          🟡 <span class="sem-label">Precaución / reflexiono</span>
+          🟡 <span class="sem-label">Riesgo ético</span>
         </button>
         <button class="sem-btn sem-rojo" onclick="answerSemaforo('rojo')">
-          🔴 <span class="sem-label">Me niego / lo reporto</span>
+          🔴 <span class="sem-label">Ilegal</span>
         </button>
       </div>
     </div>
-    <div style="font-size:0.82rem;color:#666;text-align:center">Elige la respuesta que mejor describe lo que harías.</div>
+    <div style="font-size:0.82rem;color:#666;text-align:center">Clasifica la conducta según su impacto legal y ético.</div>
   `;
 }
 
@@ -1341,7 +1445,29 @@ function startDnD() {
 function renderDnD() {
   const body = document.getElementById('game-body');
   body.innerHTML = `
-    <p style="font-size:0.88rem;color:#666;margin-bottom:12px">Arrastra cada tarjeta a la categoría correcta: ¿Es un derecho, una vulneración o una acción de protección?</p>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
+      <div style="display:flex;align-items:flex-start;gap:10px;background:#cce7f9;border-radius:10px;padding:10px 12px">
+        <span style="font-size:1.2rem;flex-shrink:0">🛡️</span>
+        <div>
+          <strong style="font-size:0.82rem;color:#0d4d7a;display:block">Derecho digital</strong>
+          <span style="font-size:0.78rem;color:#1a5080;line-height:1.4">Lo que la ley te garantiza en internet: acceder a tus datos, proteger tu privacidad, decidir qué compartes.</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:10px;background:#fde8e6;border-radius:10px;padding:10px 12px">
+        <span style="font-size:1.2rem;flex-shrink:0">⚠️</span>
+        <div>
+          <strong style="font-size:0.82rem;color:#c0392b;display:block">Vulneración</strong>
+          <span style="font-size:0.78rem;color:#922b21;line-height:1.4">Una acción que viola tus derechos o los de otra persona. Puede ser un delito.</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:10px;background:#d4edda;border-radius:10px;padding:10px 12px">
+        <span style="font-size:1.2rem;flex-shrink:0">✅</span>
+        <div>
+          <strong style="font-size:0.82rem;color:#1a5c2e;display:block">Acción de protección</strong>
+          <span style="font-size:0.78rem;color:#1a5c2e;line-height:1.4">Lo que puedes hacer para defender tus derechos o los de alguien más cuando están en riesgo.</span>
+        </div>
+      </div>
+    </div>
     <div class="dnd-container">
       <div class="dnd-items-pool">
         <h3>Tarjetas para clasificar</h3>
