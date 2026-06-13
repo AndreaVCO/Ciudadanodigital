@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ciudadano/a Digital — Isla del Tesoro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ocean: #1a6ea8;
+      --ocean-dark: #0d4d7a;
+      --ocean-light: #cce7f9;
+      --sand: #f5e6c3;
+      --sand-dark: #dbc98a;
+      --green: #3a8c4e;
+      --green-light: #d4edda;
+      --coral: #e05a2b;
+      --coral-light: #fce8df;
+      --yellow: #f0b429;
+      --yellow-light: #fef6dc;
+      --purple: #6c43b0;
+      --purple-light: #ede4f7;
+      --red: #c0392b;
+      --red-light: #fde8e6;
+      --white: #ffffff;
+      --gray-100: #f7f7f5;
+      --gray-200: #ededea;
+      --gray-600: #6b6b68;
+      --gray-800: #2c2c2a;
+      --radius: 14px;
+      --shadow: 0 4px 18px rgba(0,0,0,0.12);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: linear-gradient(180deg, #0a3d62 0%, #1a6ea8 40%, #1e8bc3 100%);
+      min-height: 100vh;
+      color: var(--gray-800);
+    }
+    h1, h2, h3, .display { font-family: 'Fredoka One', cursive; }
+
+    /* ====== SCREENS ====== */
+    .screen { display: none; min-height: 100vh; }
+    .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px; }
+
+    /* ====== INTRO ====== */
+    #screen-intro {
+      background: linear-gradient(180deg, #062541 0%, #0d4d7a 40%, #1a6ea8 100%);
+      justify-content: center;
+      text-align: center;
+    }
+    .intro-island { font-size: 100px; margin-bottom: 10px; }
+    #screen-intro h1 { color: var(--yellow); font-size: 2.8rem; text-shadow: 3px 3px 0 rgba(0,0,0,0.4); }
+    #screen-intro p { color: var(--ocean-light); font-size: 1.05rem; max-width: 480px; margin: 12px auto 28px; line-height: 1.6; }
+    .btn-main {
+      background: var(--yellow);
+      color: var(--gray-800);
+      border: none;
+      border-radius: 40px;
+      padding: 14px 36px;
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.3rem;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #c49020, 0 6px 20px rgba(0,0,0,0.25);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .btn-main:hover { transform: translateY(-2px); }
+    .btn-main:active { transform: translateY(2px); box-shadow: 0 2px 0 #c49020; }
+
+    /* ====== MAP ====== */
+    #screen-map { background: linear-gradient(180deg, #0a3d62 0%, #1571a8 100%); }
+    .map-header { text-align: center; margin-bottom: 24px; }
+    .map-header h2 { color: var(--yellow); font-size: 2rem; }
+    .map-header p { color: var(--ocean-light); font-size: 0.95rem; }
+    .progress-bar-wrap { background: rgba(255,255,255,0.2); border-radius: 40px; height: 12px; width: 260px; margin: 10px auto 0; overflow: hidden; }
+    .progress-bar { height: 100%; background: var(--yellow); border-radius: 40px; transition: width 0.5s ease; }
+
+    .island-map {
+      position: relative;
+      width: 100%;
+      max-width: 640px;
+      background: #1d7aba;
+      border-radius: 24px;
+      padding: 28px;
+      border: 3px solid rgba(255,255,255,0.2);
+    }
+    .map-path {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .zone-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(255,255,255,0.12);
+      border: 2px solid rgba(255,255,255,0.25);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .zone-card:hover:not(.locked) { background: rgba(255,255,255,0.2); transform: translateX(4px); }
+    .zone-card.locked { opacity: 0.5; cursor: not-allowed; }
+    .zone-card.completed { border-color: var(--yellow); background: rgba(240,180,41,0.15); }
+    .zone-icon { font-size: 2.4rem; width: 52px; text-align: center; flex-shrink: 0; }
+    .zone-info { flex: 1; }
+    .zone-info h3 { color: var(--white); font-size: 1rem; margin-bottom: 2px; }
+    .zone-info p { color: rgba(255,255,255,0.7); font-size: 0.82rem; }
+    .zone-badge {
+      font-size: 0.72rem;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-locked { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.5); }
+    .badge-available { background: var(--yellow); color: #5a3a00; }
+    .badge-done { background: #27ae60; color: white; }
+    .connector {
+      width: 2px;
+      height: 16px;
+      background: rgba(255,255,255,0.3);
+      margin: 0 auto;
+      margin-left: 40px;
+      border-radius: 2px;
+    }
+    .stars-earned { color: var(--yellow); font-size: 0.85rem; }
+
+    /* ====== GAME SHELL ====== */
+    #screen-game { background: var(--sand); padding: 0; }
+    .game-header {
+      background: var(--ocean-dark);
+      color: white;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+    }
+    .game-header h2 { font-size: 1.15rem; flex: 1; }
+    .btn-back {
+      background: rgba(255,255,255,0.15);
+      border: none;
+      color: white;
+      border-radius: 8px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+    .btn-back:hover { background: rgba(255,255,255,0.25); }
+    .zone-icon-lg { font-size: 1.8rem; }
+    .game-body { padding: 20px; width: 100%; max-width: 680px; margin: 0 auto; }
+
+    /* ====== GENERIC GAME ELEMENTS ====== */
+    .question-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+    .question-number { font-size: 0.75rem; font-weight: 700; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+    .question-text { font-size: 1.05rem; font-weight: 700; line-height: 1.45; color: var(--gray-800); }
+    .options-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+    .option-btn {
+      background: var(--gray-100);
+      border: 2px solid var(--gray-200);
+      border-radius: 10px;
+      padding: 12px 16px;
+      text-align: left;
+      cursor: pointer;
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: all 0.15s;
+      color: var(--gray-800);
+    }
+    .option-btn:hover:not(:disabled) { border-color: var(--ocean); background: var(--ocean-light); }
+    .option-btn.correct { background: var(--green-light); border-color: var(--green); color: #1a5c2e; }
+    .option-btn.wrong { background: var(--red-light); border-color: var(--red); color: var(--red); }
+    .option-btn:disabled { cursor: not-allowed; }
+
+    /* ====== FEEDBACK TOAST ====== */
+    .feedback-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 200;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 24px;
+    }
+    .feedback-overlay.show { display: flex; }
+    .feedback-card {
+      background: white;
+      border-radius: 20px;
+      padding: 22px 24px;
+      max-width: 500px;
+      width: 100%;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .feedback-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .feedback-icon { font-size: 2rem; }
+    .feedback-title { font-family: 'Fredoka One', cursive; font-size: 1.3rem; }
+    .feedback-title.correct { color: var(--green); }
+    .feedback-title.wrong { color: var(--red); }
+    .feedback-article {
+      background: var(--yellow-light);
+      border-left: 4px solid var(--yellow);
+      border-radius: 0 8px 8px 0;
+      padding: 10px 14px;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      margin-bottom: 14px;
+    }
+    .feedback-article strong { display: block; margin-bottom: 3px; color: #7a5500; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .feedback-explanation { font-size: 0.92rem; line-height: 1.55; color: var(--gray-600); margin-bottom: 16px; }
+    .btn-continue {
+      width: 100%;
+      background: var(--ocean);
+      color: white;
+      border: none;
+      border-radius: 40px;
+      padding: 13px;
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-continue:hover { background: var(--ocean-dark); }
+
+    /* ====== PROTOCOL SCREEN ====== */
+    .protocol-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+    .protocol-card h3 { font-family: 'Fredoka One', cursive; font-size: 1.3rem; color: var(--ocean-dark); margin-bottom: 6px; }
+    .protocol-card p { font-size: 0.9rem; color: var(--gray-600); line-height: 1.55; margin-bottom: 12px; }
+    .protocol-steps { list-style: none; counter-reset: step; }
+    .protocol-steps li {
+      counter-increment: step;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    .protocol-steps li::before {
+      content: counter(step);
+      background: var(--ocean);
+      color: white;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.75rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .contact-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .chip {
+      background: var(--ocean-light);
+      color: var(--ocean-dark);
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .zone-complete-banner {
+      background: linear-gradient(135deg, var(--green), #1d8c40);
+      color: white;
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .zone-complete-banner h2 { font-size: 1.6rem; margin-bottom: 4px; }
+    .zone-complete-banner p { opacity: 0.9; font-size: 0.9rem; }
+    .score-display { font-size: 2rem; font-family: 'Fredoka One', cursive; margin: 8px 0; }
+    .btn-secondary {
+      background: transparent;
+      border: 2px solid var(--ocean);
+      color: var(--ocean);
+      border-radius: 40px;
+      padding: 11px 28px;
+      font-family: 'Fredoka One', cursive;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin: 4px;
+    }
+    .btn-secondary:hover { background: var(--ocean); color: white; }
+
+    /* ====== MEMORY GAME ====== */
+    .memory-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin: 16px 0;
+    }
+    .mem-card {
+      aspect-ratio: 1;
+      border-radius: 10px;
+      cursor: pointer;
+      background: var(--ocean);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      transition: transform 0.3s;
+      transform-style: preserve-3d;
+      border: 3px solid rgba(255,255,255,0.3);
+    }
+    .mem-card.flipped { transform: rotateY(180deg); }
+    .mem-card-front, .mem-card-back {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      backface-visibility: hidden;
+    }
+    .mem-card-front { background: var(--ocean); color: white; font-size: 1.4rem; }
+    .mem-card-back { background: var(--yellow-light); transform: rotateY(180deg); font-size: 1.5rem; }
+    .mem-card.matched .mem-card-front { background: var(--green-light); }
+    .mem-instructions {
+      background: var(--ocean-light);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 0.88rem;
+      color: var(--ocean-dark);
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+    .mem-pair-label {
+      background: white;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-top: 10px;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      border: 1.5px solid var(--ocean-light);
+    }
+    .mem-pair-label strong { color: var(--ocean-dark); }
+
+    /* ====== SEMÁFORO GAME ====== */
+    .semaforo-scenario {
+      background: white;
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+    .scenario-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gray-600); margin-bottom: 8px; }
+    .scenario-text { font-size: 1rem; font-weight: 700; line-height: 1.45; margin-bottom: 16px; }
+    .semaforo-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .sem-btn {
+      flex: 1;
+      min-width: 100px;
+      padding: 16px 10px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-family: 'Fredoka One', cursive;
+      font-size: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.15s;
+    }
+    .sem-btn:hover { transform: scale(1.04); }
+    .sem-verde { background: #27ae60; color: white; }
+    .sem-amarillo { background: var(--yellow); color: #5a3a00; }
+    .sem-rojo { background: var(--red); color: white; }
+    .sem-label { font-size: 0.8rem; font-weight: 600; font-family: 'Nunito', sans-serif; }
+
+    /* ====== TRUE/FALSE GAME ====== */
+    .tf-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .tf-claim { font-size: 1.1rem; font-weight: 700; line-height: 1.45; margin: 12px 0 20px; padding: 0 8px; }
+    .tf-btns { display: flex; gap: 12px; justify-content: center; }
+    .tf-btn {
+      flex: 1;
+      max-width: 140px;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.1rem;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+    }
+    .tf-btn:hover { transform: translateY(-2px); }
+    .tf-true { background: var(--green); color: white; }
+    .tf-false { background: var(--red); color: white; }
+
+    /* ====== DRAG AND DROP ====== */
+    .dnd-container { display: flex; flex-direction: column; gap: 16px; }
+    .dnd-items-pool {
+      background: white;
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    .dnd-items-pool h3 { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: var(--gray-600); margin-bottom: 12px; }
+    .dnd-items { display: flex; flex-wrap: wrap; gap: 8px; min-height: 50px; }
+    .dnd-item {
+      background: var(--ocean-light);
+      color: var(--ocean-dark);
+      border: 2px solid var(--ocean);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: grab;
+      user-select: none;
+      transition: opacity 0.15s;
+    }
+    .dnd-item:active { cursor: grabbing; opacity: 0.6; }
+    .dnd-item.dragging { opacity: 0.4; }
+    .dnd-categories { display: flex; flex-direction: column; gap: 12px; }
+    .dnd-category {
+      background: white;
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
+      border: 2px dashed var(--gray-200);
+      transition: border-color 0.15s;
+      min-height: 80px;
+    }
+    .dnd-category.drag-over { border-color: var(--ocean); background: var(--ocean-light); }
+    .dnd-category h3 { font-size: 0.9rem; font-weight: 700; margin-bottom: 10px; }
+    .dnd-category .dnd-items { min-height: 40px; }
+    .dnd-category-label { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-bottom: 8px; }
+    .cat-derecho { background: var(--ocean-light); color: var(--ocean-dark); }
+    .cat-vulneracion { background: var(--red-light); color: var(--red); }
+    .cat-proteccion { background: var(--green-light); color: var(--green); }
+    .dnd-check-btn {
+      background: var(--ocean);
+      color: white;
+      border: none;
+      border-radius: 40px;
+      padding: 13px 28px;
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.05rem;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-top: 8px;
+    }
+    .dnd-check-btn:hover { background: var(--ocean-dark); }
+
+    /* ====== FINAL CHALLENGE ====== */
+    .dilemma-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+    .dilemma-icon { font-size: 2.5rem; text-align: center; margin-bottom: 10px; }
+    .dilemma-situation {
+      background: var(--gray-100);
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 0.93rem;
+      line-height: 1.55;
+      margin-bottom: 16px;
+    }
+    .dilemma-question { font-size: 1rem; font-weight: 700; margin-bottom: 14px; }
+    .dilemma-options { display: flex; flex-direction: column; gap: 8px; }
+    .dilemma-opt {
+      background: var(--gray-100);
+      border: 2px solid var(--gray-200);
+      border-radius: 10px;
+      padding: 12px 16px;
+      text-align: left;
+      cursor: pointer;
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.15s;
+      color: var(--gray-800);
+    }
+    .dilemma-opt:hover:not(:disabled) { border-color: var(--ocean); background: var(--ocean-light); }
+    .dilemma-opt.best { background: var(--green-light); border-color: var(--green); color: #1a5c2e; }
+    .dilemma-opt.ok { background: var(--yellow-light); border-color: var(--yellow); color: #6b4400; }
+    .dilemma-opt.risky { background: var(--red-light); border-color: var(--red); color: var(--red); }
+
+    /* ====== FINAL SCREEN ====== */
+    #screen-final {
+      background: linear-gradient(180deg, #062541 0%, #0d4d7a 60%, #1a6ea8 100%);
+      justify-content: center;
+      text-align: center;
+    }
+    .trophy { font-size: 90px; animation: bounce 1s infinite alternate; margin-bottom: 10px; }
+    @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-12px); } }
+    #screen-final h1 { color: var(--yellow); font-size: 2.4rem; text-shadow: 2px 2px 0 rgba(0,0,0,0.4); }
+    #screen-final p { color: var(--ocean-light); font-size: 1rem; max-width: 460px; margin: 12px auto 10px; line-height: 1.6; }
+    .final-stars { font-size: 2.5rem; letter-spacing: 8px; margin: 12px 0; }
+    .cert-badge {
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 16px;
+      padding: 16px 24px;
+      display: inline-block;
+      margin: 16px auto;
+    }
+    .cert-badge p { font-size: 0.85rem; color: rgba(255,255,255,0.7); margin: 0; }
+    .cert-badge strong { color: var(--yellow); font-size: 1rem; }
+
+    /* Score counter */
+    .score-counter { background: rgba(255,255,255,0.2); border-radius: 20px; padding: 4px 12px; font-size: 0.85rem; color: white; font-weight: 700; }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .memory-grid { grid-template-columns: repeat(4, 1fr); gap: 7px; }
+      .semaforo-btns { flex-direction: column; }
+      .sem-btn { flex-direction: row; justify-content: center; padding: 12px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===================== INTRO SCREEN ===================== -->
+<section id="screen-intro" class="screen active">
+  <div class="intro-island">🏝️</div>
+  <h1>Ciudadano/a Digital</h1>
+  <p>Embárcate en la Isla del Tesoro digital. Recorre 5 zonas, supera los retos y aprende a navegar el mundo digital con seguridad y respeto.</p>
+  <button class="btn-main" onclick="showMap()">¡Comenzar aventura!</button>
+  <p style="color:rgba(255,255,255,0.4); font-size:0.8rem; margin-top:18px;">Para adolescentes · Ecuador · Ciudadanía Digital</p>
+</section>
+
+<!-- ===================== MAP SCREEN ===================== -->
+<section id="screen-map" class="screen">
+  <div class="map-header">
+    <h2>🗺️ Mapa de la Isla</h2>
+    <p>Completa las zonas para desbloquear el tesoro final</p>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="main-progress" style="width:0%"></div>
+    </div>
+  </div>
+  <div class="island-map">
+    <div class="map-path" id="zone-list">
+      <!-- Zones injected by JS -->
+    </div>
+  </div>
+</section>
+
+<!-- ===================== GAME SCREEN ===================== -->
+<section id="screen-game" class="screen">
+  <div class="game-header">
+    <button class="btn-back" onclick="showMap()">← Mapa</button>
+    <span class="zone-icon-lg" id="game-zone-icon"></span>
+    <h2 id="game-zone-title"></h2>
+    <div class="score-counter">⭐ <span id="live-score">0</span></div>
+  </div>
+  <div class="game-body" id="game-body">
+    <!-- Game content injected here -->
+  </div>
+</section>
+
+<!-- ===================== FINAL SCREEN ===================== -->
+<section id="screen-final" class="screen">
+  <div class="trophy">🏆</div>
+  <h1>¡Tesoro encontrado!</h1>
+  <p>Completaste todos los desafíos de la Isla del Tesoro Digital. Ahora eres un <strong style="color:var(--yellow)">Ciudadano/a Digital</strong> preparado/a para navegar el mundo digital con seguridad y responsabilidad.</p>
+  <div class="final-stars" id="final-stars">⭐⭐⭐⭐⭐</div>
+  <div class="cert-badge">
+    <p>Puntuación total</p>
+    <strong id="final-score-display">0 / 0 puntos</strong>
+  </div>
+  <p style="font-size:0.85rem; color:rgba(255,255,255,0.5);">Comparte este logro con tu familia y docentes</p>
+  <button class="btn-main" onclick="restartGame()" style="margin-top:16px;">Jugar de nuevo</button>
+</section>
+
+<!-- ===================== FEEDBACK OVERLAY ===================== -->
+<div class="feedback-overlay" id="feedback-overlay">
+  <div class="feedback-card">
+    <div class="feedback-header">
+      <span class="feedback-icon" id="fb-icon"></span>
+      <span class="feedback-title" id="fb-title"></span>
+    </div>
+    <div class="feedback-article" id="fb-article"></div>
+    <p class="feedback-explanation" id="fb-explanation"></p>
+    <button class="btn-continue" onclick="closeFeedback()">Continuar →</button>
+  </div>
+</div>
+
+<script>
+// =================== DATA ===================
+const ZONES = [
+  {
+    id: 1,
+    icon: "👤",
+    title: "Zona 1: Identidad",
+    subtitle: "¿Quién eres en internet?",
+    type: "memory",
+    color: "#6c43b0",
+  },
+  {
+    id: 2,
+    icon: "🚦",
+    title: "Zona 2: Relaciones",
+    subtitle: "¿Cómo te relacionas digitalmente?",
+    type: "semaforo",
+    color: "#27ae60",
+  },
+  {
+    id: 3,
+    icon: "🔍",
+    title: "Zona 3: Información",
+    subtitle: "¿Cómo navegas la información?",
+    type: "verdaderofalso",
+    color: "#1a6ea8",
+  },
+  {
+    id: 4,
+    icon: "⚖️",
+    title: "Zona 4: Derechos",
+    subtitle: "Tus derechos digitales",
+    type: "draganddrop",
+    color: "#e05a2b",
+  },
+  {
+    id: 5,
+    icon: "🏆",
+    title: "Zona 5: Desafío Final",
+    subtitle: "Toma de decisiones",
+    type: "final",
+    color: "#c0392b",
+  }
+];
+
+// =================== GAME STATE ===================
+let state = {
+  completed: [],
+  scores: {},
+  currentZone: null,
+  gameScore: 0,
+  totalScore: 0,
+  feedbackQueue: [],
+};
+
+function saveState() {
+  try { localStorage.setItem('cdState', JSON.stringify(state)); } catch(e){}
+}
+function loadState() {
+  try {
+    const s = localStorage.getItem('cdState');
+    if (s) state = JSON.parse(s);
+  } catch(e){}
+}
+loadState();
+
+// =================== NAVIGATION ===================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function showMap() {
+  renderMap();
+  showScreen('screen-map');
+}
+
+function showFinal() {
+  const totalPossible = Object.keys(state.scores).reduce((acc, k) => acc + (state.scores[k].max || 0), 0);
+  const totalEarned = Object.keys(state.scores).reduce((acc, k) => acc + (state.scores[k].earned || 0), 0);
+  document.getElementById('final-score-display').textContent = totalEarned + ' / ' + totalPossible + ' puntos';
+  const pct = totalPossible > 0 ? totalEarned / totalPossible : 0;
+  const stars = pct >= 0.9 ? '⭐⭐⭐⭐⭐' : pct >= 0.7 ? '⭐⭐⭐⭐' : pct >= 0.5 ? '⭐⭐⭐' : '⭐⭐';
+  document.getElementById('final-stars').textContent = stars;
+  showScreen('screen-final');
+}
+
+function restartGame() {
+  state = { completed: [], scores: {}, currentZone: null, gameScore: 0, totalScore: 0, feedbackQueue: [] };
+  saveState();
+  showScreen('screen-intro');
+}
+
+// =================== MAP RENDERING ===================
+function renderMap() {
+  const container = document.getElementById('zone-list');
+  container.innerHTML = '';
+  const pct = (state.completed.length / ZONES.length) * 100;
+  document.getElementById('main-progress').style.width = pct + '%';
+
+  ZONES.forEach((zone, idx) => {
+    const isDone = state.completed.includes(zone.id);
+    const isAvailable = idx === 0 || state.completed.includes(ZONES[idx-1].id);
+    const isLocked = !isAvailable && !isDone;
+
+    const card = document.createElement('div');
+    card.className = 'zone-card' + (isLocked ? ' locked' : '') + (isDone ? ' completed' : '');
+    card.innerHTML = `
+      <div class="zone-icon">${zone.icon}</div>
+      <div class="zone-info">
+        <h3>${zone.title}</h3>
+        <p>${zone.subtitle}</p>
+        ${isDone ? `<div class="stars-earned">✅ ¡Completada! ${state.scores[zone.id] ? state.scores[zone.id].earned + '/' + state.scores[zone.id].max + ' pts' : ''}</div>` : ''}
+      </div>
+      <div>
+        <span class="zone-badge ${isDone ? 'badge-done' : isAvailable ? 'badge-available' : 'badge-locked'}">
+          ${isDone ? '✓ Hecho' : isAvailable ? 'Jugar' : '🔒'}
+        </span>
+      </div>`;
+    if (!isLocked) card.onclick = () => startZone(zone);
+    container.appendChild(card);
+
+    if (idx < ZONES.length - 1) {
+      const conn = document.createElement('div');
+      conn.className = 'connector';
+      container.appendChild(conn);
+    }
+  });
+}
+
+// =================== FEEDBACK ===================
+let feedbackCallback = null;
+function showFeedback(isCorrect, article, explanation, cb) {
+  const overlay = document.getElementById('feedback-overlay');
+  document.getElementById('fb-icon').textContent = isCorrect ? '🎉' : '💡';
+  const title = document.getElementById('fb-title');
+  title.textContent = isCorrect ? '¡Correcto!' : 'Aprendamos de esto';
+  title.className = 'feedback-title ' + (isCorrect ? 'correct' : 'wrong');
+  document.getElementById('fb-article').innerHTML = `<strong>📋 Marco Legal</strong>${article}`;
+  document.getElementById('fb-explanation').textContent = explanation;
+  feedbackCallback = cb;
+  overlay.classList.add('show');
+}
+function closeFeedback() {
+  document.getElementById('feedback-overlay').classList.remove('show');
+  if (feedbackCallback) feedbackCallback();
+}
+
+// =================== ZONE STARTER ===================
+function startZone(zone) {
+  state.currentZone = zone;
+  state.gameScore = 0;
+  document.getElementById('game-zone-icon').textContent = zone.icon;
+  document.getElementById('game-zone-title').textContent = zone.title;
+  document.getElementById('live-score').textContent = '0';
+  showScreen('screen-game');
+
+  switch(zone.type) {
+    case 'memory': startMemory(); break;
+    case 'semaforo': startSemaforo(); break;
+    case 'verdaderofalso': startVF(); break;
+    case 'draganddrop': startDnD(); break;
+    case 'final': startFinalChallenge(); break;
+  }
+}
+
+function addScore(pts) {
+  state.gameScore += pts;
+  document.getElementById('live-score').textContent = state.gameScore;
+}
+
+function completeZone(maxScore) {
+  const zone = state.currentZone;
+  if (!state.completed.includes(zone.id)) state.completed.push(zone.id);
+  state.scores[zone.id] = { earned: state.gameScore, max: maxScore };
+  saveState();
+  renderProtocol(zone);
+}
+
+// =================== PROTOCOL RENDERER ===================
+const PROTOCOLS = {
+  1: {
+    title: "¿Vulneraron tu identidad digital?",
+    body: "Si alguien suplantó tu identidad, creó perfiles falsos con tus datos o usó tu información sin permiso, esto es un delito en Ecuador.",
+    steps: [
+      "Documenta la evidencia: toma capturas de pantalla del perfil o contenido falso.",
+      "Reporta el perfil o contenido directamente a la red social o plataforma.",
+      "Denuncia ante la Fiscalía General del Estado o la Policía Nacional.",
+      "Informa a un adulto de confianza (madre, padre, tutor/a, docente).",
+      "Si tienes menos de 18 años, el MIES o DINAPEN puede orientarte.",
+    ],
+    contacts: ["Fiscalía: 1800-DELITO", "DINAPEN: 101", "MIES: 1800-4-MIES", "ECU911: 911"]
+  },
+  2: {
+    title: "¿Viviste acoso digital o ciberbullying?",
+    body: "Si recibes amenazas, insultos, difusión de imágenes privadas o acoso en redes sociales, tienes derecho a protección legal.",
+    steps: [
+      "Guarda evidencia: capturas de pantalla de los mensajes y publicaciones.",
+      "Bloquea a la persona que te acosa en todas las plataformas.",
+      "Cuéntaselo a un adulto de confianza de inmediato.",
+      "Presenta una denuncia en la Fiscalía (delito de acoso sexual digital o ciberacoso).",
+      "Si eres menor de edad, acude con un adulto al DECE de tu institución educativa.",
+    ],
+    contacts: ["Fiscalía: 1800-DELITO", "Línea de ayuda MIES: 1800-4-MIES", "ECU911: 911", "Defensoría del Pueblo: 1800-PUEBLO"]
+  },
+  3: {
+    title: "¿Fuiste víctima de desinformación o fraude digital?",
+    body: "Si te engañaron con información falsa que te causó daño, o si fuiste víctima de un fraude o estafa en línea, puedes denunciarlo.",
+    steps: [
+      "Guarda evidencia del contenido falso o del fraude (capturas, correos, links).",
+      "Reporta el contenido a la plataforma como desinformación o fraude.",
+      "Si perdiste dinero o datos, denuncia en la Fiscalía por delito informático.",
+      "Reporta fraudes bancarios a la Superintendencia de Bancos.",
+      "Informa a tu familia y advierte a otros usuarios para evitar que sean víctimas.",
+    ],
+    contacts: ["Fiscalía: 1800-DELITO", "Superbancos: 1800-SUPERB", "ARCOTEL: arcotel.gob.ec", "ECU911: 911"]
+  },
+  4: {
+    title: "¿Vulneraron tus derechos digitales?",
+    body: "En Ecuador, la Ley Orgánica de Protección de Datos Personales (LOPDP) y el Código Orgánico Integral Penal (COIP) protegen tus datos y tu vida privada en línea.",
+    steps: [
+      "Identifica qué derecho fue vulnerado: privacidad, datos personales, imagen, etc.",
+      "Documenta con capturas de pantalla, correos o cualquier evidencia digital.",
+      "Envía una solicitud de supresión o rectificación de tus datos a la empresa o persona responsable.",
+      "Presenta una denuncia ante la Autoridad de Protección de Datos Personales del Ecuador.",
+      "Si hay delito penal, acude a la Fiscalía General del Estado.",
+    ],
+    contacts: ["Fiscalía: 1800-DELITO", "Defensoría del Pueblo: 1800-PUEBLO", "SNAP (datos): protecciondatos.gob.ec", "ECU911: 911"]
+  },
+  5: {
+    title: "Protocolo General de Ciudadanía Digital",
+    body: "Como ciudadano/a digital completo/a, ahora conoces los protocolos de todas las áreas. Recuerda que nunca estás solo/a.",
+    steps: [
+      "Ante cualquier situación digital que te incomode: detente, reflexiona, no respondas impulsivamente.",
+      "Guarda evidencia siempre antes de eliminar cualquier contenido.",
+      "Cuenta a un adulto de confianza: docente, padre, madre o tutor/a.",
+      "Usa los canales oficiales de denuncia según el tipo de vulneración.",
+      "Comparte lo aprendido con tus compañeros/as para crear una comunidad digital más segura.",
+    ],
+    contacts: ["Fiscalía: 1800-DELITO", "ECU911: 911", "DINAPEN: 101", "MIES: 1800-4-MIES"]
+  }
+};
+
+function renderProtocol(zone) {
+  const proto = PROTOCOLS[zone.id];
+  const body = document.getElementById('game-body');
+  const allDone = state.completed.length === ZONES.length;
+
+  body.innerHTML = `
+    <div class="zone-complete-banner">
+      <div style="font-size:2.5rem">${zone.icon}</div>
+      <h2>¡Zona completada!</h2>
+      <p>${zone.subtitle}</p>
+      <div class="score-display">⭐ ${state.gameScore} pts</div>
+    </div>
+
+    <div class="protocol-card">
+      <h3>📋 ${proto.title}</h3>
+      <p>${proto.body}</p>
+      <strong style="display:block;font-size:0.82rem;text-transform:uppercase;color:#666;margin-bottom:8px">Pasos a seguir:</strong>
+      <ol class="protocol-steps">
+        ${proto.steps.map(s => `<li>${s}</li>`).join('')}
+      </ol>
+      <strong style="display:block;font-size:0.82rem;text-transform:uppercase;color:#666;margin:12px 0 6px">Contactos de ayuda en Ecuador:</strong>
+      <div class="contact-chips">
+        ${proto.contacts.map(c => `<span class="chip">${c}</span>`).join('')}
+      </div>
+    </div>
+
+    <div style="text-align:center; margin-top:10px">
+      ${allDone
+        ? `<button class="btn-main" onclick="showFinal()">🏆 Ver mi tesoro final</button>`
+        : `<button class="btn-main" onclick="showMap()">Continuar en el mapa →</button>`
+      }
+      <br><button class="btn-secondary" onclick="startZone(state.currentZone)" style="margin-top:10px">Repetir zona</button>
+    </div>
+  `;
+}
+
+// =============================================
+// ===== ZONA 1: MEMORIA ======================
+// =============================================
+const MEMORY_PAIRS = [
+  { term: "👤 Avatar", def: "Imagen que me representa en internet" },
+  { term: "🔐 Contraseña", def: "Clave secreta para proteger mi cuenta" },
+  { term: "📍 Datos personales", def: "Info que me identifica: nombre, edad, dirección" },
+  { term: "🌐 Huella digital", def: "Rastro que dejo cuando navego en internet" },
+  { term: "🔒 Privacidad", def: "Derecho a controlar mis datos en línea" },
+  { term: "🎭 Identidad digital", def: "Quién soy yo en internet" },
+];
+
+const MEMORY_ARTICLES = [
+  "Art. 66, numeral 19 de la Constitución del Ecuador: reconoce el derecho a la protección de datos de carácter personal.",
+  "Ley Orgánica de Protección de Datos Personales (LOPDP) – Ecuador, 2021: establece el derecho al control de tus datos en línea.",
+  "Art. 178 del COIP: sanciona la violación de la intimidad y la privacidad digital.",
+  "Art. 66, numeral 20 de la Constitución: el derecho a la intimidad personal y familiar.",
+  "LOPDP, Art. 7: el titular de datos tiene el derecho de acceso, rectificación y supresión.",
+  "LOPDP, Art. 9: tratamiento de datos de menores de edad requiere consentimiento del representante legal.",
+];
+
+let memFlipped = [];
+let memMatched = [];
+let memLocked = false;
+let memCards = [];
+let memCurrentPairArticle = null;
+
+function startMemory() {
+  memFlipped = []; memMatched = []; memLocked = false; memCards = [];
+  const pairs = [...MEMORY_PAIRS];
+  const items = [];
+  pairs.forEach((p, i) => {
+    items.push({ id: i, side: 'term', text: p.term, match: i, article: MEMORY_ARTICLES[i], defText: p.def });
+    items.push({ id: i + pairs.length, side: 'def', text: p.def, match: i, article: MEMORY_ARTICLES[i], termText: p.term });
+  });
+  // Shuffle
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+  memCards = items;
+
+  const body = document.getElementById('game-body');
+  body.innerHTML = `
+    <div class="mem-instructions">
+      <strong>¿Quién eres en internet?</strong> Encuentra las parejas: cada concepto de identidad digital tiene su definición. ¡Emparéjalos todos!
+    </div>
+    <div class="memory-grid" id="mem-grid"></div>
+    <div id="mem-match-info"></div>
+  `;
+  renderMemGrid();
+}
+
+function renderMemGrid() {
+  const grid = document.getElementById('mem-grid');
+  grid.innerHTML = '';
+  memCards.forEach((card, idx) => {
+    const isMatched = memMatched.includes(card.match);
+    const isFlipped = memFlipped.includes(idx) || isMatched;
+    const el = document.createElement('div');
+    el.className = 'mem-card' + (isFlipped ? ' flipped' : '') + (isMatched ? ' matched' : '');
+    el.style.position = 'relative';
+    el.innerHTML = `
+      <div class="mem-card-front">❓</div>
+      <div class="mem-card-back" style="font-size:0.72rem;text-align:center;padding:6px;line-height:1.3">${card.text}</div>
+    `;
+    if (!isMatched) el.onclick = () => flipMemCard(idx);
+    grid.appendChild(el);
+  });
+}
+
+function flipMemCard(idx) {
+  if (memLocked) return;
+  if (memFlipped.includes(idx)) return;
+  if (memMatched.includes(memCards[idx].match)) return;
+  memFlipped.push(idx);
+  renderMemGrid();
+
+  if (memFlipped.length === 2) {
+    memLocked = true;
+    const [a, b] = memFlipped;
+    if (memCards[a].match === memCards[b].match && memCards[a].side !== memCards[b].side) {
+      memMatched.push(memCards[a].match);
+      memFlipped = [];
+      memLocked = false;
+      addScore(10);
+      const termCard = memCards[a].side === 'term' ? memCards[a] : memCards[b];
+      const defCard = memCards[a].side === 'def' ? memCards[a] : memCards[b];
+      document.getElementById('mem-match-info').innerHTML = `
+        <div class="mem-pair-label">
+          <strong>✅ ¡Pareja encontrada!</strong><br>
+          ${termCard.text} = ${defCard.text}
+        </div>`;
+      showFeedback(true, termCard.article,
+        `¡Bien! ${termCard.text.replace(/^\S+ /, '')} es ${defCard.text.toLowerCase()}.`,
+        () => {
+          renderMemGrid();
+          if (memMatched.length === MEMORY_PAIRS.length) {
+            setTimeout(() => completeZone(MEMORY_PAIRS.length * 10), 400);
+          }
+        });
+    } else {
+      setTimeout(() => {
+        memFlipped = [];
+        memLocked = false;
+        renderMemGrid();
+        document.getElementById('mem-match-info').innerHTML = `
+          <div class="mem-pair-label" style="border-color:#e05a2b;color:#c0392b">
+            No son pareja. ¡Sigue intentando!
+          </div>`;
+      }, 900);
+    }
+  }
+}
+
+// =============================================
+// ===== ZONA 2: SEMÁFORO =====================
+// =============================================
+const SEMAFORO_SCENARIOS = [
+  {
+    text: "Tu compañero/a te manda una foto comprometedora de otra persona del colegio por WhatsApp y te pide que la reenvíes.",
+    correct: 'rojo',
+    article: "Art. 178 COIP – Violación a la intimidad: compartir imágenes de otras personas sin su consentimiento es delito y puede tener consecuencias penales.",
+    explanations: {
+      verde: "Reenviar esa imagen es participar en el daño a esa persona. Aunque no la tomaste tú, tu acción contribuye al problema.",
+      amarillo: "Hablar antes de actuar es mejor. Debes negarte a reenviarla y reportarlo.",
+      rojo: "¡Correcto! Nunca debes reenviar imágenes comprometedoras de otras personas. Debes negarte y reportar al docente o a un adulto."
+    }
+  },
+  {
+    text: "Alguien que conociste solo en línea te pide tu dirección de casa porque quiere 'sorprenderte con un regalo'.",
+    correct: 'rojo',
+    article: "Art. 173 COIP – Contacto con finalidad sexual con menores de 18 años: compartir tu ubicación con desconocidos puede exponerte a situaciones de riesgo.",
+    explanations: {
+      verde: "Dar tu dirección a desconocidos en línea es muy peligroso, aunque parezcan amables.",
+      amarillo: "Dudar está bien, pero lo correcto es negarse completamente y contarle a un adulto de confianza.",
+      rojo: "¡Correcto! Nunca compartas tu dirección con personas que conociste solo en internet. Cuéntaselo a un adulto."
+    }
+  },
+  {
+    text: "Tu mejor amigo/a te comparte la contraseña de su cuenta de streaming para que puedas usarla cuando quieras.",
+    correct: 'amarillo',
+    article: "Términos de uso de plataformas: compartir contraseñas puede violar los términos de servicio. Además, tener acceso a cuentas ajenas crea situaciones de riesgo para ambos.",
+    explanations: {
+      verde: "Aunque sea tu mejor amigo/a, usar contraseñas ajenas puede causar problemas de privacidad y no es una práctica recomendada.",
+      amarillo: "¡Bien pensado! Puedes agradecerle, pero es mejor explicarle que compartir contraseñas no es la mejor práctica digital.",
+      rojo: "No es un delito entre amigos, pero sí es una práctica de riesgo. El semáforo amarillo (precaución y conversación) es lo más apropiado."
+    }
+  },
+  {
+    text: "Ves en redes sociales que tus compañeros/as están creando un grupo para publicar memes burlones sobre un estudiante de tu clase.",
+    correct: 'rojo',
+    article: "Art. 180 COIP – Difamación. Art. 396 COIP – Acoso. La Ley Orgánica de Educación Intercultural también prohíbe el acoso escolar, incluyendo el ciberbullying.",
+    explanations: {
+      verde: "Participar o silenciarte ante el ciberbullying hace que seas parte del problema, aunque no seas quien lo inicia.",
+      amarillo: "Reflexionar está bien, pero aquí la acción correcta es clara: no participar y reportarlo.",
+      rojo: "¡Correcto! No participar y reportarlo a un docente o DECE es lo correcto. El ciberbullying es acoso escolar y tiene consecuencias legales."
+    }
+  },
+  {
+    text: "Una aplicación gratuita te pide permiso para acceder a tu micrófono, cámara, ubicación y lista de contactos.",
+    correct: 'amarillo',
+    article: "LOPDP – Ley Orgánica de Protección de Datos Personales, Ecuador: tienes derecho a saber por qué una app necesita tus datos y a negarte si los permisos no son razonables.",
+    explanations: {
+      verde: "Aceptar todos los permisos sin revisar puede exponer tus datos innecesariamente. Hay que ser cuidadoso.",
+      amarillo: "¡Correcto! Revisa si realmente necesita esos permisos. Solo acepta lo que sea necesario para que funcione.",
+      rojo: "No necesariamente es una app maliciosa, pero sí debes revisar y limitar los permisos que concedes."
+    }
+  }
+];
+
+let semIdx = 0;
+
+function startSemaforo() {
+  semIdx = 0;
+  renderSemaforo();
+}
+
+function renderSemaforo() {
+  if (semIdx >= SEMAFORO_SCENARIOS.length) {
+    completeZone(SEMAFORO_SCENARIOS.length * 10);
+    return;
+  }
+  const s = SEMAFORO_SCENARIOS[semIdx];
+  const body = document.getElementById('game-body');
+  body.innerHTML = `
+    <div style="font-size:0.82rem;color:#666;margin-bottom:8px">Situación ${semIdx+1} de ${SEMAFORO_SCENARIOS.length}</div>
+    <div class="semaforo-scenario">
+      <div class="scenario-label">🚦 ¿Cómo reaccionas?</div>
+      <div class="scenario-text">${s.text}</div>
+      <div class="semaforo-btns">
+        <button class="sem-btn sem-verde" onclick="answerSemaforo('verde')">
+          🟢 <span class="sem-label">Lo hago / no hay problema</span>
+        </button>
+        <button class="sem-btn sem-amarillo" onclick="answerSemaforo('amarillo')">
+          🟡 <span class="sem-label">Precaución / reflexiono</span>
+        </button>
+        <button class="sem-btn sem-rojo" onclick="answerSemaforo('rojo')">
+          🔴 <span class="sem-label">Me niego / lo reporto</span>
+        </button>
+      </div>
+    </div>
+    <div style="font-size:0.82rem;color:#666;text-align:center">Elige la respuesta que mejor describe lo que harías.</div>
+  `;
+}
+
+function answerSemaforo(color) {
+  const s = SEMAFORO_SCENARIOS[semIdx];
+  const isCorrect = color === s.correct;
+  if (isCorrect) addScore(10);
+  semIdx++;
+  showFeedback(isCorrect, s.article, s.explanations[color], renderSemaforo);
+}
+
+// =============================================
+// ===== ZONA 3: VERDADERO / FALSO ============
+// =============================================
+const VF_QUESTIONS = [
+  {
+    claim: "Si algo está publicado en internet es información verdadera porque 'alguien la subió'.",
+    answer: false,
+    article: "UNESCO – Alfabetización Mediática e Informacional: la fuente importa. Cualquier persona puede publicar información falsa en internet. Es fundamental verificar la fuente y contrastar datos.",
+    explanation: "FALSO. Cualquier persona puede publicar contenido en internet, incluyendo información falsa o engañosa. Siempre debes verificar la fuente y contrastar con medios o entidades confiables."
+  },
+  {
+    claim: "Tus datos personales en internet (nombre, foto, ubicación) son un tipo de propiedad que te pertenece.",
+    answer: true,
+    article: "Art. 66, num. 19 Constitución del Ecuador y LOPDP: tus datos personales son tu propiedad y tienes derecho a controlar quién los usa, cómo y para qué.",
+    explanation: "VERDADERO. La Constitución del Ecuador y la Ley de Protección de Datos reconocen tus datos personales como un activo que te pertenece. Puedes solicitar que sean eliminados o corregidos."
+  },
+  {
+    claim: "Un meme con información falsa sobre una persona famosa es inofensivo porque es 'solo humor'.",
+    answer: false,
+    article: "Art. 180 COIP – Difamación: difundir información falsa que daña la reputación de alguien, aunque sea en forma de meme o broma, puede constituir un delito.",
+    explanation: "FALSO. Un meme con información falsa puede dañar la reputación de una persona y constituir difamación. El humor no justifica difundir mentiras sobre otras personas."
+  },
+  {
+    claim: "En Ecuador, hacer clic en 'aceptar' en los términos y condiciones de una app significa que leíste y aprobaste cómo usarán tus datos.",
+    answer: false,
+    article: "LOPDP, Art. 20 – Consentimiento informado: para que el consentimiento sea válido, debes haber recibido información clara y comprensible sobre el tratamiento de tus datos.",
+    explanation: "FALSO. En la práctica, casi nadie lee los términos y condiciones. La ley exige que el consentimiento sea informado, pero muchas apps no cumplen con esto. Siempre intenta revisar qué permisos concedes."
+  },
+  {
+    claim: "Si recibes un mensaje que dice 'Comparte esto o le pasará algo malo a tu familia', puedes ignorarlo sin problema.",
+    answer: true,
+    article: "Desinformación y cadenas: los mensajes de cadena son una forma común de desinformación y manipulación emocional en redes sociales. No tienen efecto real al ignorarlos.",
+    explanation: "VERDADERO. Los mensajes de cadena son una táctica de desinformación y manipulación. No tienen ningún efecto si los ignoras. Lo correcto es no reenviarlos y reportarlos como spam."
+  },
+  {
+    claim: "Una imagen puede ser editada para cambiar su contexto y crear desinformación, incluso con fotos reales.",
+    answer: true,
+    article: "Fact-checking y alfabetización mediática: la manipulación de imágenes reales fuera de su contexto original es una técnica muy usada para crear noticias falsas (fake news).",
+    explanation: "VERDADERO. Una foto real puede ser usada fuera de contexto para crear una noticia falsa. Siempre verifica la fuente original de las imágenes antes de compartirlas."
+  }
+];
+
+let vfIdx = 0;
+
+function startVF() {
+  vfIdx = 0;
+  renderVF();
+}
+
+function renderVF() {
+  if (vfIdx >= VF_QUESTIONS.length) {
+    completeZone(VF_QUESTIONS.length * 10);
+    return;
+  }
+  const q = VF_QUESTIONS[vfIdx];
+  const body = document.getElementById('game-body');
+  body.innerHTML = `
+    <div style="font-size:0.82rem;color:#666;margin-bottom:6px">Pregunta ${vfIdx+1} de ${VF_QUESTIONS.length}</div>
+    <div class="tf-card">
+      <div style="font-size:2rem">🔍</div>
+      <div class="tf-claim">${q.claim}</div>
+      <div class="tf-btns">
+        <button class="tf-btn tf-true" onclick="answerVF(true)">✅ Verdadero</button>
+        <button class="tf-btn tf-false" onclick="answerVF(false)">❌ Falso</button>
+      </div>
+    </div>
+    <div style="font-size:0.82rem;color:#666;text-align:center">Analiza bien la afirmación antes de responder.</div>
+  `;
+}
+
+function answerVF(answer) {
+  const q = VF_QUESTIONS[vfIdx];
+  const isCorrect = answer === q.answer;
+  if (isCorrect) addScore(10);
+  vfIdx++;
+  showFeedback(isCorrect, q.article, q.explanation, renderVF);
+}
+
+// =============================================
+// ===== ZONA 4: DRAG AND DROP ================
+// =============================================
+const DND_ITEMS = [
+  { id: 'i1', text: 'Acceder a mis datos que tienen las empresas', category: 'derecho' },
+  { id: 'i2', text: 'Publicar fotos mías sin mi permiso', category: 'vulneracion' },
+  { id: 'i3', text: 'Denunciar ante la Fiscalía', category: 'proteccion' },
+  { id: 'i4', text: 'Usar mis datos para publicidad sin avisar', category: 'vulneracion' },
+  { id: 'i5', text: 'Pedir que eliminen mis datos de un sitio', category: 'derecho' },
+  { id: 'i6', text: 'Guardar evidencia (capturas de pantalla)', category: 'proteccion' },
+  { id: 'i7', text: 'Hackear mi cuenta de redes sociales', category: 'vulneracion' },
+  { id: 'i8', text: 'Bloquear y reportar al agresor', category: 'proteccion' },
+  { id: 'i9', text: 'Saber cómo usan mis datos personales', category: 'derecho' },
+  { id: 'i10', text: 'Acudir al DECE o a un adulto de confianza', category: 'proteccion' },
+];
+
+const DND_CATEGORIES = [
+  { id: 'derecho', label: '🛡️ Mis derechos digitales', css: 'cat-derecho' },
+  { id: 'vulneracion', label: '⚠️ Vulneraciones (delitos)', css: 'cat-vulneracion' },
+  { id: 'proteccion', label: '✅ Acciones de protección', css: 'cat-proteccion' },
+];
+
+const DND_ARTICLES = {
+  derecho: "LOPDP, Art. 7 y 9: tienes derecho a acceder, rectificar, suprimir y conocer el uso de tus datos personales.",
+  vulneracion: "Arts. 178, 229, 230 COIP: acceso no autorizado, violación de privacidad y uso indebido de datos son delitos en Ecuador.",
+  proteccion: "Art. 195 Código de la Niñez y Adolescencia: los NNA tienen derecho a protección contra toda forma de abuso, incluyendo el digital."
+};
+
+let dndPlaced = {};
+let dragId = null;
+
+function startDnD() {
+  dndPlaced = {};
+  DND_ITEMS.forEach(i => dndPlaced[i.id] = 'pool');
+  renderDnD();
+}
+
+function renderDnD() {
+  const body = document.getElementById('game-body');
+  body.innerHTML = `
+    <p style="font-size:0.88rem;color:#666;margin-bottom:12px">Arrastra cada tarjeta a la categoría correcta: ¿Es un derecho, una vulneración o una acción de protección?</p>
+    <div class="dnd-container">
+      <div class="dnd-items-pool">
+        <h3>Tarjetas para clasificar</h3>
+        <div class="dnd-items" id="pool-items" ondragover="allowDrop(event)" ondrop="dropTo('pool',event)">
+          ${DND_ITEMS.filter(i => dndPlaced[i.id]==='pool').map(i => `
+            <div class="dnd-item" id="dnd-${i.id}" draggable="true"
+              ondragstart="startDrag('${i.id}')" ontouchstart="touchStart(event,'${i.id}')">${i.text}</div>`).join('')}
+        </div>
+      </div>
+      <div class="dnd-categories">
+        ${DND_CATEGORIES.map(cat => `
+          <div class="dnd-category" id="cat-${cat.id}" ondragover="allowDrop(event)" ondrop="dropTo('${cat.id}',event)">
+            <span class="dnd-category-label ${cat.css}">${cat.label}</span>
+            <div class="dnd-items">
+              ${DND_ITEMS.filter(i => dndPlaced[i.id]===cat.id).map(i => `
+                <div class="dnd-item" id="dnd-${i.id}" draggable="true"
+                  ondragstart="startDrag('${i.id}')" ontouchstart="touchStart(event,'${i.id}')">${i.text}</div>`).join('')}
+            </div>
+          </div>`).join('')}
+      </div>
+      <button class="dnd-check-btn" onclick="checkDnD()">Verificar clasificación ✓</button>
+    </div>
+  `;
+}
+
+function startDrag(id) { dragId = id; }
+function allowDrop(e) { e.preventDefault(); e.currentTarget.closest('.dnd-category,.dnd-items-pool')?.classList.add('drag-over'); }
+function dropTo(catId, e) {
+  e.preventDefault();
+  document.querySelectorAll('.dnd-category,.dnd-items-pool').forEach(el => el.classList.remove('drag-over'));
+  if (dragId) { dndPlaced[dragId] = catId; dragId = null; renderDnD(); }
+}
+
+// Touch support
+let touchItem = null;
+function touchStart(e, id) {
+  touchItem = id;
+  const el = document.getElementById('dnd-'+id);
+  el.style.opacity = '0.5';
+}
+document.addEventListener('touchend', function(e) {
+  if (!touchItem) return;
+  const touch = e.changedTouches[0];
+  const target = document.elementFromPoint(touch.clientX, touch.clientY);
+  const catEl = target?.closest('[id^="cat-"]');
+  const poolEl = target?.closest('#pool-items');
+  if (catEl) {
+    const catId = catEl.id.replace('cat-','');
+    dndPlaced[touchItem] = catId;
+    renderDnD();
+  } else if (poolEl) {
+    dndPlaced[touchItem] = 'pool';
+    renderDnD();
+  } else {
+    const el = document.getElementById('dnd-'+touchItem);
+    if (el) el.style.opacity = '1';
+  }
+  touchItem = null;
+});
+
+function checkDnD() {
+  const inPool = DND_ITEMS.filter(i => dndPlaced[i.id]==='pool');
+  if (inPool.length > 0) {
+    alert('Aún hay tarjetas sin clasificar. ¡Arrástralas todas!');
+    return;
+  }
+  let correct = 0;
+  DND_ITEMS.forEach(i => { if (dndPlaced[i.id] === i.category) correct++; });
+  const score = Math.round((correct / DND_ITEMS.length) * 40);
+  state.gameScore = score;
+  document.getElementById('live-score').textContent = score;
+
+  const body = document.getElementById('game-body');
+  const lines = DND_ITEMS.map(i => {
+    const ok = dndPlaced[i.id] === i.category;
+    const catLabel = DND_CATEGORIES.find(c=>c.id===i.category)?.label || '';
+    return `<li style="margin-bottom:6px;font-size:0.88rem">${ok?'✅':'❌'} <strong>${i.text}</strong> → ${catLabel}</li>`;
+  }).join('');
+
+  body.innerHTML = `
+    <div class="zone-complete-banner" style="background: linear-gradient(135deg, #1a6ea8, #0d4d7a)">
+      <div style="font-size:2rem">⚖️</div>
+      <h2>Resultado</h2>
+      <div class="score-display">${correct} / ${DND_ITEMS.length} correctas</div>
+      <p>Puntos: ${score} / 40</p>
+    </div>
+    <div style="background:white;border-radius:14px;padding:18px;box-shadow:var(--shadow);margin-bottom:16px">
+      <h3 style="font-family:'Fredoka One',cursive;margin-bottom:12px">Revisión</h3>
+      <ul style="list-style:none">${lines}</ul>
+    </div>
+    <div class="question-card">
+      <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;color:#666;margin-bottom:6px">📋 Marco Legal</div>
+      <p style="font-size:0.88rem;line-height:1.6;color:#555">${DND_ARTICLES.derecho}</p>
+      <p style="font-size:0.88rem;line-height:1.6;color:#555;margin-top:6px">${DND_ARTICLES.vulneracion}</p>
+    </div>
+    <div style="text-align:center">
+      <button class="btn-main" onclick="completeZone(40)">Ver protocolo →</button>
+    </div>
+  `;
+}
+
+// =============================================
+// ===== ZONA 5: DESAFÍO FINAL ================
+// =============================================
+const DILEMMAS = [
+  {
+    icon: "😰",
+    title: "El mensaje que no pediste",
+    situation: "Valentina (15 años) recibe mensajes de un desconocido en Instagram que dice tener 16 años. Poco a poco los mensajes se vuelven más personales y le pide fotos. Valentina se siente incómoda pero no quiere ser 'grosera'.",
+    question: "¿Qué debe hacer Valentina?",
+    options: [
+      { text: "Bloquear al desconocido, no responder más y contárselo a un adulto de confianza de inmediato.", type: 'best', score: 15 },
+      { text: "Ignorar los mensajes pero no bloquear, esperando que el desconocido se aburra.", type: 'ok', score: 5 },
+      { text: "Responder amablemente pero explicar que no se siente cómoda.", type: 'ok', score: 7 },
+      { text: "Mandar las fotos para no parecer grosera con alguien que dice ser de su edad.", type: 'risky', score: 0 },
+    ],
+    article: "Art. 173 COIP – Contacto con finalidad sexual con menores de 18 años a través de medios digitales: es un delito que puede sancionarse con prisión de 1 a 3 años.",
+    explanation: "La mejor opción es bloquear, no responder y contárselo a un adulto. Nunca se deben enviar fotos a desconocidos. La persona que pide esas fotos puede estar cometiendo un delito."
+  },
+  {
+    icon: "🤳",
+    title: "La foto del grupo",
+    situation: "En un grupo de WhatsApp del colegio, alguien publica una foto de Marcos (14 años) en una situación vergonzosa tomada sin su conocimiento. Todos están comentando y riéndose.",
+    question: "Tú eres parte de ese grupo. ¿Qué haces?",
+    options: [
+      { text: "Pedir al administrador que elimine la foto, avisar a Marcos y reportar el hecho al DECE.", type: 'best', score: 15 },
+      { text: "Silenciar el grupo y no participar, pero tampoco hacer nada más.", type: 'ok', score: 5 },
+      { text: "Reírte y comentar, total, todos lo están haciendo.", type: 'risky', score: 0 },
+      { text: "Reenviar la foto a otro grupo porque es 'graciosa'.", type: 'risky', score: 0 },
+    ],
+    article: "Art. 178 COIP – Violación a la intimidad: quien difunda, venda o entregue imágenes de otra persona sin su consentimiento será sancionado con pena de 1 a 3 años.",
+    explanation: "Silenciarte también es una forma de permitir el daño. Lo correcto es pedir que se elimine la foto y avisar a Marcos. El ciberbullying es un delito escolar y penal."
+  },
+  {
+    icon: "🔗",
+    title: "El link sospechoso",
+    situation: "Sebastián (16 años) recibe un mensaje de un número desconocido que dice: 'Ganaste un iPhone 15 Pro. Haz clic aquí y llena el formulario con tus datos para reclamarlo.' El link parece oficial.",
+    question: "¿Qué debería hacer Sebastián?",
+    options: [
+      { text: "No hacer clic, eliminar el mensaje y advertir a sus contactos para que no caigan en la trampa.", type: 'best', score: 15 },
+      { text: "Hacer clic para ver de qué se trata, pero no llenar el formulario.", type: 'ok', score: 5 },
+      { text: "Llenar solo su nombre, no sus datos bancarios.", type: 'risky', score: 2 },
+      { text: "Llenar todos los datos porque parece oficial y quiere ganar el premio.", type: 'risky', score: 0 },
+    ],
+    article: "Art. 229 COIP – Revelación ilegal de base de datos. Art. 190 COIP – Apropiación fraudulenta por medios electrónicos (phishing): es un delito sancionado con hasta 5 años.",
+    explanation: "Este es un caso clásico de phishing. Los premios falsos son una trampa para robar tus datos. Nunca se deben llenar formularios de mensajes no solicitados."
+  },
+  {
+    icon: "😡",
+    title: "El comentario que escuece",
+    situation: "Camila (15 años) publica una foto y recibe comentarios hirientes de cuentas desconocidas que critican su apariencia física. Los comentarios son cada vez más agresivos y algunos amigos los respaldan con 'me gusta'.",
+    question: "¿Cómo debe responder Camila?",
+    options: [
+      { text: "Bloquear y reportar las cuentas agresoras, guardar capturas como evidencia y contárselo a un adulto o al DECE.", type: 'best', score: 15 },
+      { text: "Responder con los mismos insultos para defenderse.", type: 'risky', score: 0 },
+      { text: "Eliminar la foto para que no sigan comentando y no decirle nada a nadie.", type: 'ok', score: 4 },
+      { text: "Ignorarlo, porque si no reacciona, los comentarios pararán solos.", type: 'ok', score: 6 },
+    ],
+    article: "Art. 396 COIP – Acoso. Ley Orgánica de Educación Intercultural: el ciberacoso escolar debe ser reportado al DECE y puede tener consecuencias legales para quienes lo ejercen.",
+    explanation: "El ciberacoso no desaparece ignorándolo. Lo correcto es reportar, guardar evidencia y buscar apoyo. Responder con insultos puede agravar la situación."
+  },
+];
+
+let dilemmaIdx = 0;
+
+function startFinalChallenge() {
+  dilemmaIdx = 0;
+  renderDilemma();
+}
+
+function renderDilemma() {
+  if (dilemmaIdx >= DILEMMAS.length) {
+    completeZone(DILEMMAS.length * 15);
+    return;
+  }
+  const d = DILEMMAS[dilemmaIdx];
+  const body = document.getElementById('game-body');
+  body.innerHTML = `
+    <div style="font-size:0.82rem;color:#666;margin-bottom:8px">Dilema ${dilemmaIdx+1} de ${DILEMMAS.length}</div>
+    <div class="dilemma-card">
+      <div class="dilemma-icon">${d.icon}</div>
+      <strong style="display:block;font-size:0.85rem;color:#666;margin-bottom:8px">${d.title}</strong>
+      <div class="dilemma-situation">${d.situation}</div>
+      <div class="dilemma-question">${d.question}</div>
+      <div class="dilemma-options">
+        ${d.options.map((opt, idx) => `
+          <button class="dilemma-opt" onclick="answerDilemma(${idx})">${opt.text}</button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function answerDilemma(idx) {
+  const d = DILEMMAS[dilemmaIdx];
+  const opt = d.options[idx];
+  addScore(opt.score);
+  const isCorrect = opt.type === 'best';
+  const typeLabels = { best: '¡Es la mejor decisión!', ok: 'Bien, pero existe una mejor opción.', risky: 'Esto puede empeorar la situación.' };
+  dilemmaIdx++;
+  showFeedback(isCorrect, d.article, typeLabels[opt.type] + ' ' + d.explanation, renderDilemma);
+}
+
+// =================== INIT ===================
+document.addEventListener('DOMContentLoaded', () => {
+  loadState();
+  if (state.completed && state.completed.length > 0) {
+    renderMap();
+  }
+});
+</script>
+</body>
+</html>
