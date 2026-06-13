@@ -583,17 +583,137 @@
 </section>
 
 <!-- ===================== FINAL SCREEN ===================== -->
-<section id="screen-final" class="screen">
-  <div class="trophy">🏆</div>
-  <h1>¡Tesoro encontrado!</h1>
-  <p>Completaste todos los desafíos de la Isla del Tesoro Digital. Ahora eres un <strong style="color:var(--yellow)">Ciudadano/a Digital</strong> preparado/a para navegar el mundo digital con seguridad y responsabilidad.</p>
-  <div class="final-stars" id="final-stars">⭐⭐⭐⭐⭐</div>
-  <div class="cert-badge">
-    <p>Puntuación total</p>
-    <strong id="final-score-display">0 / 0 puntos</strong>
+<section id="screen-final" class="screen" style="background: linear-gradient(180deg, #062541 0%, #0d4d7a 60%, #1a6ea8 100%); padding: 24px 20px;">
+  <div style="max-width:640px; width:100%;">
+
+    <div style="text-align:center; margin-bottom:28px;">
+      <div class="trophy">🏆</div>
+      <h1 style="color:var(--yellow); font-size:2.2rem; text-shadow:2px 2px 0 rgba(0,0,0,0.4)">¡Tesoro encontrado!</h1>
+      <p style="color:var(--ocean-light); font-size:1rem; max-width:440px; margin:10px auto; line-height:1.6">Completaste todos los desafíos. Ahora eres un/a <strong style="color:var(--yellow)">Ciudadano/a Digital</strong> preparado/a para navegar con seguridad y responsabilidad.</p>
+      <div class="final-stars" id="final-stars">⭐⭐⭐⭐⭐</div>
+      <div class="cert-badge">
+        <p>Puntuación total</p>
+        <strong id="final-score-display">0 / 0 puntos</strong>
+      </div>
+    </div>
+
+    <!-- DATOS PROTEGIDOS POR LEY -->
+    <div style="background:rgba(255,255,255,0.07); border:1.5px solid rgba(255,255,255,0.2); border-radius:16px; padding:22px; margin-bottom:18px; text-align:center;">
+      <div style="font-size:2rem; margin-bottom:8px">🛡️</div>
+      <h2 style="color:var(--yellow); font-family:'Fredoka One',cursive; font-size:1.5rem; margin-bottom:8px">Tus datos están protegidos por ley</h2>
+      <p style="color:rgba(255,255,255,0.85); font-size:0.95rem; line-height:1.6">Tus datos personales no son un juego.<br>Existen leyes que los protegen y te dan derechos.</p>
+    </div>
+
+    <!-- PROTOCOLO -->
+    <div style="background:white; border-radius:16px; padding:22px; margin-bottom:18px;">
+      <h2 style="font-family:'Fredoka One',cursive; color:#0d4d7a; font-size:1.35rem; margin-bottom:6px">📋 Protocolo de Protección Digital</h2>
+      <p style="font-size:0.88rem; color:#666; margin-bottom:18px; font-style:italic">Si alguien usa tu información sin permiso, puedes actuar.</p>
+
+      <div style="display:flex; flex-direction:column; gap:14px;">
+
+        <div style="background:#fde8e6; border-left:4px solid #c0392b; border-radius:0 10px 10px 0; padding:14px 16px;">
+          <strong style="color:#c0392b; font-size:0.9rem">🛑 1. Protégete de inmediato</strong>
+          <p style="font-size:0.83rem; color:#555; margin:4px 0 8px; font-style:italic">Cambia contraseñas y ajusta tu privacidad.</p>
+          <ul style="font-size:0.83rem; color:#444; line-height:1.8; list-style:none; padding:0">
+            <li>🔑 Cambia claves (correo, redes, todo)</li>
+            <li>✅ Activa verificación en dos pasos</li>
+            <li>🚪 Cierra sesiones abiertas</li>
+          </ul>
+        </div>
+
+        <div style="background:#fef6dc; border-left:4px solid #f0b429; border-radius:0 10px 10px 0; padding:14px 16px;">
+          <strong style="color:#7a5500; font-size:0.9rem">📸 2. Guarda pruebas</strong>
+          <p style="font-size:0.83rem; color:#555; margin:4px 0 8px; font-style:italic">Toma capturas de lo ocurrido.</p>
+          <ul style="font-size:0.83rem; color:#444; line-height:1.8; list-style:none; padding:0">
+            <li>📱 Screenshots del contenido</li>
+            <li>🔗 Guarda los enlaces</li>
+            <li>📅 Anota las fechas</li>
+          </ul>
+          <p style="font-size:0.8rem; color:#7a5500; font-weight:700; margin-top:6px">👉 Esto es clave si vas a denunciar.</p>
+        </div>
+
+        <div style="background:#cce7f9; border-left:4px solid #1a6ea8; border-radius:0 10px 10px 0; padding:14px 16px;">
+          <strong style="color:#0d4d7a; font-size:0.9rem">🚫 3. Reporta en la plataforma</strong>
+          <p style="font-size:0.83rem; color:#555; margin:4px 0 8px; font-style:italic">Denuncia el contenido o la cuenta.</p>
+          <ul style="font-size:0.83rem; color:#444; line-height:1.8; list-style:none; padding:0">
+            <li>📲 Las redes sociales tienen botón de "reportar"</li>
+            <li>🗑️ Puedes pedir que eliminen el contenido</li>
+          </ul>
+        </div>
+
+        <div style="background:#d4edda; border-left:4px solid #3a8c4e; border-radius:0 10px 10px 0; padding:14px 16px;">
+          <strong style="color:#1a5c2e; font-size:0.9rem">⚖️ 4. Denuncia en Ecuador</strong>
+          <p style="font-size:0.83rem; color:#555; margin:4px 0 8px">Puedes acudir a:</p>
+          <ul style="font-size:0.83rem; color:#444; line-height:1.8; list-style:none; padding:0">
+            <li>🏛️ Autoridad de Protección de Datos Personales</li>
+            <li>🏛️ Defensoría del Pueblo</li>
+            <li>🏛️ Fiscalía General del Estado</li>
+          </ul>
+          <p style="font-size:0.8rem; color:#1a5c2e; font-weight:700; margin-top:6px">La ley te protege — Constitución Art. 66 y LOPDP.</p>
+        </div>
+
+        <div style="background:#ede4f7; border-left:4px solid #6c43b0; border-radius:0 10px 10px 0; padding:14px 16px;">
+          <strong style="color:#4a2d80; font-size:0.9rem">🧠 5. Busca apoyo</strong>
+          <p style="font-size:0.83rem; color:#555; margin:4px 0 8px; font-style:italic">No enfrentes esto solo/a.</p>
+          <ul style="font-size:0.83rem; color:#444; line-height:1.8; list-style:none; padding:0">
+            <li>👨‍👩‍👧 Familia</li>
+            <li>👩‍🏫 Profesores o DECE</li>
+            <li>🤝 Adultos de confianza</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- MARCO LEGAL -->
+    <div style="background:white; border-radius:16px; padding:22px; margin-bottom:18px;">
+      <h2 style="font-family:'Fredoka One',cursive; color:#0d4d7a; font-size:1.35rem; margin-bottom:16px">📜 Marco Legal</h2>
+
+      <div style="margin-bottom:16px;">
+        <div style="background:#cce7f9; border-radius:8px; padding:10px 14px; margin-bottom:10px;">
+          <strong style="color:#0d4d7a; font-size:0.88rem">📘 Ley Orgánica de Protección de Datos Personales – Ecuador (2021)</strong>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="background:#f7f7f5; border-radius:8px; padding:10px 14px; font-size:0.85rem; line-height:1.5">
+            <strong style="color:#0d4d7a">Art. 1</strong> — Garantiza el derecho a la protección de datos personales.
+          </div>
+          <div style="background:#f7f7f5; border-radius:8px; padding:10px 14px; font-size:0.85rem; line-height:1.5">
+            <strong style="color:#0d4d7a">Art. 4</strong> — Define qué son los datos personales.
+          </div>
+          <div style="background:#f7f7f5; border-radius:8px; padding:10px 14px; font-size:0.85rem; line-height:1.5">
+            <strong style="color:#0d4d7a">Art. 10</strong> — Establece los principios de seguridad, confidencialidad y consentimiento.
+          </div>
+        </div>
+        <p style="font-size:0.82rem; color:#666; margin-top:8px; font-style:italic; text-align:center">Tus datos deben ser protegidos y usados con tu autorización.</p>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <div style="background:#d4edda; border-radius:8px; padding:10px 14px; margin-bottom:10px;">
+          <strong style="color:#1a5c2e; font-size:0.88rem">⚖️ Constitución de la República del Ecuador</strong>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="background:#f7f7f5; border-radius:8px; padding:10px 14px; font-size:0.85rem; line-height:1.5">
+            <strong style="color:#1a5c2e">Art. 66, numeral 19</strong> — Derecho a la protección de datos personales.
+          </div>
+          <div style="background:#f7f7f5; border-radius:8px; padding:10px 14px; font-size:0.85rem; line-height:1.5">
+            <strong style="color:#1a5c2e">Art. 66, numeral 20</strong> — Derecho a la intimidad personal y familiar.
+          </div>
+        </div>
+        <p style="font-size:0.82rem; color:#666; margin-top:8px; font-style:italic; text-align:center">Tienes derecho a la privacidad y al control de tu información.</p>
+      </div>
+
+      <div style="background:#ede4f7; border-radius:10px; padding:14px 16px; text-align:center;">
+        <strong style="color:#4a2d80; font-size:0.9rem">🌐 Tus derechos digitales en la práctica</strong>
+        <p style="font-size:0.88rem; color:#555; margin-top:6px; line-height:1.6">Puedes decidir <strong>qué compartir</strong>, <strong>con quién</strong> y <strong>cuándo</strong>.<br>Eres dueño/a de tu información digital.</p>
+      </div>
+    </div>
+
+    <div style="text-align:center; padding-bottom:30px;">
+      <p style="font-size:0.82rem; color:rgba(255,255,255,0.5); margin-bottom:14px">Comparte este logro con tu familia y docentes</p>
+      <button class="btn-main" onclick="restartGame()">Jugar de nuevo</button>
+    </div>
+
   </div>
-  <p style="font-size:0.85rem; color:rgba(255,255,255,0.5);">Comparte este logro con tu familia y docentes</p>
-  <button class="btn-main" onclick="restartGame()" style="margin-top:16px;">Jugar de nuevo</button>
 </section>
 
 <!-- ===================== FEEDBACK OVERLAY ===================== -->
@@ -893,21 +1013,21 @@ function renderProtocol(zone) {
 // ===== ZONA 1: MEMORIA ======================
 // =============================================
 const MEMORY_PAIRS = [
-  { term: "👤 Avatar", def: "Imagen que me representa en internet" },
-  { term: "🔐 Contraseña", def: "Clave secreta para proteger mi cuenta" },
-  { term: "📍 Datos personales", def: "Info que me identifica: nombre, edad, dirección" },
-  { term: "🌐 Huella digital", def: "Rastro que dejo cuando navego en internet" },
-  { term: "🔒 Privacidad", def: "Derecho a controlar mis datos en línea" },
-  { term: "🎭 Identidad digital", def: "Quién soy yo en internet" },
+  { term: "📍 Ubicación", def: "Tu ubicación puede exponerte a riesgos. Protégela." },
+  { term: "🤳 Foto personal", def: "Lo que publicas en internet puede quedarse para siempre." },
+  { term: "🔐 Contraseña", def: "Cuida tu contraseña. Tus datos están protegidos por ley." },
+  { term: "📱 Número de teléfono", def: "Tu número puede ser usado para contactarte sin tu permiso." },
+  { term: "📧 Correo electrónico", def: "Tu correo puede ser usado para suplantar tu identidad." },
+  { term: "💬 Compartir información", def: "Compartir sin pensar puede traer consecuencias." },
 ];
 
 const MEMORY_ARTICLES = [
-  "Art. 66, numeral 19 de la Constitución del Ecuador: reconoce el derecho a la protección de datos de carácter personal.",
-  "Ley Orgánica de Protección de Datos Personales (LOPDP) – Ecuador, 2021: establece el derecho al control de tus datos en línea.",
-  "Art. 178 del COIP: sanciona la violación de la intimidad y la privacidad digital.",
-  "Art. 66, numeral 20 de la Constitución: el derecho a la intimidad personal y familiar.",
-  "LOPDP, Art. 7: el titular de datos tiene el derecho de acceso, rectificación y supresión.",
-  "LOPDP, Art. 9: tratamiento de datos de menores de edad requiere consentimiento del representante legal.",
+  "LOPDP, Art. 10 – Principio de seguridad: tu ubicación es un dato sensible. Compartirla sin cuidado puede exponerte a situaciones de riesgo real.",
+  "Art. 178 COIP – Violación a la intimidad: publicar imágenes propias o ajenas sin consentimiento puede tener consecuencias legales y personales permanentes.",
+  "Art. 66, numeral 19 de la Constitución del Ecuador: tus datos están protegidos. Una contraseña robada puede derivar en suplantación de identidad (Art. 212 COIP).",
+  "LOPDP, Art. 10 – Principio de confidencialidad: tu número de teléfono es un dato personal. Compartirlo sin control puede exponerte a acoso o fraude.",
+  "Art. 212 COIP – Suplantación de identidad: usar el correo de otra persona para hacerse pasar por ella es un delito penado en Ecuador.",
+  "LOPDP, Art. 10 – Principio de consentimiento: antes de compartir información personal en línea, piensa en las consecuencias. La ley te da el derecho a decidir.",
 ];
 
 let memFlipped = [];
@@ -934,7 +1054,7 @@ function startMemory() {
   const body = document.getElementById('game-body');
   body.innerHTML = `
     <div class="mem-instructions">
-      <strong>¿Quién eres en internet?</strong> Encuentra las parejas: cada concepto de identidad digital tiene su definición. ¡Emparéjalos todos!
+      En internet, cada acción tiene una consecuencia. Voltea las tarjetas y empareja cada riesgo digital con lo que puede provocar. <strong>¿Reconoces los peligros antes de que sea tarde?</strong>
     </div>
     <div class="memory-grid" id="mem-grid"></div>
     <div id="mem-match-info"></div>
