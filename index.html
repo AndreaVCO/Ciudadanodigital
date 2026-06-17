@@ -515,11 +515,33 @@
       justify-content: center;
       text-align: center;
     }
-    .trophy { font-size: 90px; animation: bounce 1s infinite alternate; margin-bottom: 10px; }
-    @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-12px); } }
+    .chest-wrap { position: relative; width: 190px; max-width: 70vw; height: 130px; margin: 0 auto 8px; }
+    .chest-mouth { position: absolute; left: 50%; top: 38%; width: 1px; height: 1px; }
+    .chest-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+    .chest-lid-g { transform-box: fill-box; transform-origin: 50% 100%; transition: transform 0.6s cubic-bezier(.34,1.7,.5,1); }
+    .chest-wrap.opened .chest-lid-g { transform: translateY(-34px) rotate(-22deg); }
+    .chest-glow { position: absolute; left: 50%; top: 40%; width: 14px; height: 14px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,224,102,0.95) 0%, rgba(255,224,102,0) 70%);
+      transform: translate(-50%,-50%) scale(0); opacity: 0; }
+    .chest-wrap.opened .chest-glow { animation: chestGlow 1s ease-out 0.25s forwards; }
+    @keyframes chestGlow {
+      0% { transform: translate(-50%,-50%) scale(0); opacity: 0; }
+      35% { transform: translate(-50%,-50%) scale(13); opacity: 0.85; }
+      100% { transform: translate(-50%,-50%) scale(17); opacity: 0; }
+    }
+    .star-slot { display: inline-block; font-size: 2.5rem; }
+    .flying-star { position: fixed; font-size: 2.5rem; left: 0; top: 0; z-index: 999;
+      transform: translate(-50%,-50%) scale(0.3); opacity: 0;
+      transition: left 0.7s cubic-bezier(.22,1.1,.4,1), top 0.7s cubic-bezier(.22,1.1,.4,1),
+                  transform 0.7s cubic-bezier(.22,1.1,.4,1), opacity 0.25s ease-out;
+      pointer-events: none; }
+    .flying-star.launched { opacity: 1; transform: translate(-50%,-50%) scale(1.3) rotate(18deg); }
+    .flying-star.landed { transform: translate(-50%,-50%) scale(1) rotate(0deg); }
     #screen-final h1 { color: var(--yellow); font-size: 2.4rem; text-shadow: 2px 2px 0 rgba(0,0,0,0.4); }
     #screen-final p { color: var(--ocean-light); font-size: 1rem; max-width: 460px; margin: 12px auto 10px; line-height: 1.6; }
-    .final-stars { font-size: 2.5rem; letter-spacing: 8px; margin: 12px 0; }
+    .final-stars { display: flex; justify-content: center; align-items: center; gap: 8px; min-height: 3rem; margin: 12px 0;
+      opacity: 0; transform: scale(0.85); transition: opacity 0.3s ease, transform 0.3s ease; }
+    .final-stars.revealed { opacity: 1; transform: scale(1); }
     .cert-badge {
       background: rgba(255,255,255,0.1);
       border: 2px solid rgba(255,255,255,0.3);
@@ -587,10 +609,23 @@
   <div style="max-width:640px; width:100%;">
 
     <div style="text-align:center; margin-bottom:28px;">
-      <div class="trophy">🏆</div>
+      <div class="chest-wrap" id="chest-wrap">
+        <div class="chest-glow"></div>
+        <span class="chest-mouth" id="chest-mouth"></span>
+        <svg class="chest-svg" viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="100" cy="68" rx="62" ry="16" fill="#3a200c"/>
+          <rect x="22" y="70" width="156" height="58" rx="12" fill="#a9692f" stroke="#5c3414" stroke-width="4"/>
+          <rect x="22" y="92" width="156" height="13" fill="#e0b13e" stroke="#a9772a" stroke-width="2"/>
+          <rect x="91" y="88" width="18" height="22" rx="3" fill="#f4c430" stroke="#a9772a" stroke-width="2"/>
+          <g class="chest-lid-g">
+            <path d="M22,72 Q22,22 100,22 Q178,22 178,72 Z" fill="#c98a3e" stroke="#5c3414" stroke-width="4"/>
+            <rect x="85" y="44" width="30" height="11" rx="3" fill="#f4c430" stroke="#a9772a" stroke-width="2"/>
+          </g>
+        </svg>
+      </div>
       <h1 style="color:var(--yellow); font-size:2.2rem; text-shadow:2px 2px 0 rgba(0,0,0,0.4)">¡Tesoro encontrado!</h1>
       <p style="color:var(--ocean-light); font-size:1rem; max-width:440px; margin:10px auto; line-height:1.6">Completaste todos los desafíos. Ahora eres un/a <strong style="color:var(--yellow)">Ciudadano/a Digital</strong> preparado/a para navegar con seguridad y responsabilidad.</p>
-      <div class="final-stars" id="final-stars">⭐⭐⭐⭐⭐</div>
+      <div class="final-stars" id="final-stars"></div>
       <div class="cert-badge">
         <p>Puntuación total</p>
         <strong id="final-score-display">0 / 0 puntos</strong>
@@ -812,9 +847,68 @@ function showFinal() {
   const totalEarned = Object.keys(state.scores).reduce((acc, k) => acc + (state.scores[k].earned || 0), 0);
   document.getElementById('final-score-display').textContent = totalEarned + ' / ' + totalPossible + ' puntos';
   const pct = totalPossible > 0 ? totalEarned / totalPossible : 0;
-  const stars = pct >= 0.9 ? '⭐⭐⭐⭐⭐' : pct >= 0.7 ? '⭐⭐⭐⭐' : pct >= 0.5 ? '⭐⭐⭐' : '⭐⭐';
-  document.getElementById('final-stars').textContent = stars;
+  const starCount = pct >= 0.9 ? 5 : pct >= 0.7 ? 4 : pct >= 0.5 ? 3 : 2;
+
+  // Limpia cualquier resto de una animación anterior y deja el cofre cerrado
+  document.querySelectorAll('.flying-star').forEach(el => el.remove());
+  const chestWrap = document.getElementById('chest-wrap');
+  chestWrap.classList.remove('opened');
+  const starsRow = document.getElementById('final-stars');
+  starsRow.classList.remove('revealed');
+  starsRow.innerHTML = '';
+  for (let i = 0; i < starCount; i++) {
+    const slot = document.createElement('span');
+    slot.className = 'star-slot';
+    slot.textContent = '⭐';
+    starsRow.appendChild(slot);
+  }
+
   showScreen('screen-final');
+
+  // Espera a que la pantalla esté visible y medida antes de animar
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      chestWrap.classList.add('opened'); // el cofre se abre
+
+      setTimeout(() => {
+        const mouthRect = document.getElementById('chest-mouth').getBoundingClientRect();
+        const slots = starsRow.querySelectorAll('.star-slot');
+        const clones = [];
+
+        slots.forEach((slot, i) => {
+          const targetRect = slot.getBoundingClientRect();
+          const star = document.createElement('span');
+          star.className = 'flying-star';
+          star.textContent = '⭐';
+          star.style.left = mouthRect.left + 'px';
+          star.style.top = mouthRect.top + 'px';
+          document.body.appendChild(star);
+          clones.push(star);
+
+          // Salen del cofre con un pequeño desfase entre cada una
+          setTimeout(() => {
+            star.classList.add('launched');
+            star.style.left = (mouthRect.left + (i - (slots.length - 1) / 2) * 14) + 'px';
+            star.style.top = (mouthRect.top - 40) + 'px';
+          }, i * 120);
+
+          // Luego vuelan hasta su posición final en la fila de estrellas
+          setTimeout(() => {
+            star.classList.add('landed');
+            star.style.left = (targetRect.left + targetRect.width / 2) + 'px';
+            star.style.top = (targetRect.top + targetRect.height / 2) + 'px';
+          }, i * 120 + 380);
+        });
+
+        // Al aterrizar la última estrella, se revela la fila real y se quitan los clones
+        const totalDelay = (slots.length - 1) * 120 + 380 + 700;
+        setTimeout(() => {
+          starsRow.classList.add('revealed');
+          clones.forEach(c => c.remove());
+        }, totalDelay);
+      }, 550);
+    }, 300);
+  });
 }
 
 function restartGame() {
@@ -1040,40 +1134,63 @@ function renderProtocol(zone) {
   `;
 }
 
+// =================== UTILIDADES DE ALEATORIEDAD ===================
+// Devuelve una copia del arreglo con sus elementos en orden aleatorio (Fisher-Yates)
+function shuffleArray(arr) {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+// Devuelve n elementos aleatorios (sin repetir) de un arreglo "pool"
+function pickRandom(pool, n) {
+  return shuffleArray(pool).slice(0, Math.min(n, pool.length));
+}
+
 // =============================================
 // ===== ZONA 1: MEMORIA ======================
 // =============================================
 const MEMORY_PAIRS = [
-  { term: "📍 Comparto mi ubicación en una historia", def: "⚠️ Un desconocido puede saber dónde estoy" },
-  { term: "🤳 Publico una foto mía sin revisar la privacidad", def: "⚠️ Esa imagen puede quedarse en internet para siempre" },
-  { term: "🔐 Uso la misma contraseña para todo", def: "⚠️ Si hackean una cuenta, pierdo el acceso a todas" },
-  { term: "📱 Doy mi número a alguien que conocí en línea", def: "⚠️ Pueden contactarme o acosarme sin mi permiso" },
-  { term: "📧 Uso mi correo personal para registrarme en todo", def: "⚠️ Mi identidad puede ser suplantada o mi cuenta robada" },
-  { term: "💬 Comparto información personal en un chat grupal", def: "⚠️ No sabes quién más puede ver o usar esa información" },
-];
-
-const MEMORY_ARTICLES = [
-  "LOPDP, Art. 10 – Principio de seguridad: tu ubicación es un dato sensible. Compartirla sin cuidado puede exponerte a situaciones de riesgo real.",
-  "Art. 178 COIP – Violación a la intimidad: publicar imágenes propias o ajenas sin consentimiento puede tener consecuencias legales y personales permanentes.",
-  "Art. 66, numeral 19 de la Constitución del Ecuador: tus datos están protegidos. Una contraseña robada puede derivar en suplantación de identidad (Art. 212 COIP).",
-  "LOPDP, Art. 10 – Principio de confidencialidad: tu número de teléfono es un dato personal. Compartirlo sin control puede exponerte a acoso o fraude.",
-  "Art. 212 COIP – Suplantación de identidad: usar el correo de otra persona para hacerse pasar por ella es un delito penado en Ecuador.",
-  "LOPDP, Art. 10 – Principio de consentimiento: antes de compartir información personal en línea, piensa en las consecuencias. La ley te da el derecho a decidir.",
+  { term: "📍 Comparto mi ubicación en una historia", def: "⚠️ Un desconocido puede saber dónde estoy",
+    article: "LOPDP, Art. 10 – Principio de seguridad: tu ubicación es un dato sensible. Compartirla sin cuidado puede exponerte a situaciones de riesgo real." },
+  { term: "🤳 Publico una foto mía sin revisar la privacidad", def: "⚠️ Esa imagen puede quedarse en internet para siempre",
+    article: "Art. 178 COIP – Violación a la intimidad: publicar imágenes propias o ajenas sin consentimiento puede tener consecuencias legales y personales permanentes." },
+  { term: "🔐 Uso la misma contraseña para todo", def: "⚠️ Si hackean una cuenta, pierdo el acceso a todas",
+    article: "Art. 66, numeral 19 de la Constitución del Ecuador: tus datos están protegidos. Una contraseña robada puede derivar en suplantación de identidad (Art. 212 COIP)." },
+  { term: "📱 Doy mi número a alguien que conocí en línea", def: "⚠️ Pueden contactarme o acosarme sin mi permiso",
+    article: "LOPDP, Art. 10 – Principio de confidencialidad: tu número de teléfono es un dato personal. Compartirlo sin control puede exponerte a acoso o fraude." },
+  { term: "📧 Uso mi correo personal para registrarme en todo", def: "⚠️ Mi identidad puede ser suplantada o mi cuenta robada",
+    article: "Art. 212 COIP – Suplantación de identidad: usar el correo de otra persona para hacerse pasar por ella es un delito penado en Ecuador." },
+  { term: "💬 Comparto información personal en un chat grupal", def: "⚠️ No sabes quién más puede ver o usar esa información",
+    article: "LOPDP, Art. 10 – Principio de consentimiento: antes de compartir información personal en línea, piensa en las consecuencias. La ley te da el derecho a decidir." },
+  { term: "🌐 Acepto solicitudes de amistad de gente que no conozco", def: "⚠️ Le doy acceso a mi información a un extraño",
+    article: "LOPDP, Art. 7 – Autodeterminación informativa: decidir quién ve tu información es un derecho. Aceptar desconocidos amplía quién puede acceder a tus datos." },
+  { term: "🎮 Descargo apps o juegos piratas sin revisar su origen", def: "⚠️ Pueden tener virus y robar mis datos sin que lo note",
+    article: "Art. 234 COIP – Ataques a la integridad de sistemas informáticos: muchas apps no oficiales distribuyen programas maliciosos que comprometen tu información." },
+  { term: "🕵️ Reviso el celular de mi pareja o amigo/a sin permiso", def: "⚠️ Estoy violando su privacidad aunque confíe en mí",
+    article: "Constitución del Ecuador, Art. 66 num. 21: el secreto de las comunicaciones es un derecho. Ninguna relación de confianza lo anula." },
+  { term: "🎥 Grabo a alguien sin que lo sepa y lo subo a redes", def: "⚠️ Puede ser un delito aunque diga que es 'broma'",
+    article: "Art. 178 COIP – Violación a la intimidad: grabar o difundir a una persona sin su consentimiento está sancionado, sin importar la intención." },
+  { term: "🛒 Comparto los datos de la tarjeta de mis padres para comprar en línea", def: "⚠️ Pueden robar el dinero o usar esos datos sin autorización",
+    article: "Art. 190 COIP – Apropiación fraudulenta por medios electrónicos: compartir datos financieros, incluso sin mala intención, abre la puerta a un fraude." },
 ];
 
 let memFlipped = [];
 let memMatched = [];
 let memLocked = false;
 let memCards = [];
-let memCurrentPairArticle = null;
+let memPlayCount = 0;
 
 function startMemory() {
   memFlipped = []; memMatched = []; memLocked = false; memCards = [];
-  const pairs = [...MEMORY_PAIRS];
+  const pairs = pickRandom(MEMORY_PAIRS, 6);
+  memPlayCount = pairs.length;
   const items = [];
   pairs.forEach((p, i) => {
-    items.push({ id: i, side: 'term', text: p.term, match: i, article: MEMORY_ARTICLES[i], defText: p.def });
-    items.push({ id: i + pairs.length, side: 'def', text: p.def, match: i, article: MEMORY_ARTICLES[i], termText: p.term });
+    items.push({ id: i, side: 'term', text: p.term, match: i, article: p.article, defText: p.def });
+    items.push({ id: i + pairs.length, side: 'def', text: p.def, match: i, article: p.article, termText: p.term });
   });
   // Shuffle
   for (let i = items.length - 1; i > 0; i--) {
@@ -1137,8 +1254,8 @@ function flipMemCard(idx) {
         `${termCard.text} → ${defCard.text}`,
         () => {
           renderMemGrid();
-          if (memMatched.length === MEMORY_PAIRS.length) {
-            setTimeout(() => completeZone(MEMORY_PAIRS.length * 10), 400);
+          if (memMatched.length === memPlayCount) {
+            setTimeout(() => completeZone(memPlayCount * 10), 400);
           }
         });
     } else {
@@ -1158,7 +1275,7 @@ function flipMemCard(idx) {
 // =============================================
 // ===== ZONA 2: SEMÁFORO =====================
 // =============================================
-const SEMAFORO_SCENARIOS = [
+const SEMAFORO_SCENARIOS_POOL = [
   {
     text: "Pido permiso antes de publicar una foto donde aparece otra persona.",
     correct: 'verde',
@@ -1259,21 +1376,73 @@ const SEMAFORO_SCENARIOS = [
       rojo: "¡Correcto! Es uno de los delitos digitales más graves. Si lo vives o lo conoces, denuncia de inmediato en la Fiscalía."
     }
   },
+  {
+    text: "Comparto la contraseña de mis redes sociales con mi pareja para 'demostrar confianza'.",
+    correct: 'amarillo',
+    article: "LOPDP, Art. 10 – Principio de seguridad: tu contraseña es un dato de seguridad personal. Compartirla expone tu cuenta a un uso que no controlas, aunque no sea delito.",
+    explanations: {
+      verde: "Compartir tu contraseña, aunque sea con alguien de confianza, no está libre de riesgo: cualquier persona puede usarla sin tu control.",
+      amarillo: "¡Correcto! No es un delito, pero es un riesgo serio para tu seguridad digital. Tu contraseña debe ser solo tuya.",
+      rojo: "No es ilegal compartir tu propia contraseña, aunque no es recomendable. El amarillo es la clasificación correcta."
+    }
+  },
+  {
+    text: "Instalo una app pirateada que promete funciones premium gratis.",
+    correct: 'amarillo',
+    article: "Art. 234 COIP – Ataques a la integridad de sistemas informáticos: estas apps suelen contener programas maliciosos que comprometen tus datos.",
+    explanations: {
+      verde: "Estas apps suelen contener malware oculto que puede robar tus datos o dañar tu dispositivo.",
+      amarillo: "¡Correcto! No siempre es delito instalarla, pero el riesgo de virus y robo de datos es alto.",
+      rojo: "El riesgo principal aquí es de seguridad informática, no necesariamente penal para quien la instala. El amarillo es más preciso."
+    }
+  },
+  {
+    text: "Publico el número de teléfono de un compañero en un grupo sin pedirle permiso, 'para ayudarlo a conseguir trabajo'.",
+    correct: 'rojo',
+    article: "LOPDP, Art. 7 y 9: divulgar datos personales de terceros sin su consentimiento, incluso con buena intención, vulnera la ley.",
+    explanations: {
+      verde: "Aunque la intención sea buena, compartir el número de otra persona sin su consentimiento vulnera la LOPDP.",
+      amarillo: "Esto va más allá de un riesgo ético: divulgar datos personales de alguien sin permiso está regulado por la ley.",
+      rojo: "¡Correcto! La LOPDP exige consentimiento para compartir datos personales de terceros, incluso con buenas intenciones."
+    }
+  },
+  {
+    text: "Verifico la fuente de una noticia antes de compartirla en mis redes.",
+    correct: 'verde',
+    article: "UNESCO – Alfabetización mediática: verificar fuentes antes de compartir previene la desinformación y protege a terceros de daños reputacionales.",
+    explanations: {
+      verde: "¡Correcto! Verificar antes de compartir es una práctica responsable que frena la desinformación.",
+      amarillo: "No hay riesgo en verificar información: es la conducta más recomendable antes de compartir cualquier noticia.",
+      rojo: "Verificar fuentes no tiene ninguna consecuencia legal negativa. Es lo contrario: previene problemas."
+    }
+  },
+  {
+    text: "Configuro mi perfil de redes sociales como privado y reviso quién puede ver mi contenido.",
+    correct: 'verde',
+    article: "LOPDP, Art. 7 – Autodeterminación informativa: decidir quién accede a tu información es un derecho que la ley protege.",
+    explanations: {
+      verde: "¡Correcto! Controlar la privacidad de tu perfil es ejercer tu derecho a decidir quién ve tu información.",
+      amarillo: "No existe riesgo en proteger tu privacidad; es una práctica recomendada por la propia ley.",
+      rojo: "Configurar tu privacidad no tiene ninguna consecuencia negativa. Es una conducta protegida por la ley."
+    }
+  },
 ];
 
 let semIdx = 0;
+let semScenarios = [];
 
 function startSemaforo() {
   semIdx = 0;
+  semScenarios = pickRandom(SEMAFORO_SCENARIOS_POOL, 10);
   renderSemaforo();
 }
 
 function renderSemaforo() {
-  if (semIdx >= SEMAFORO_SCENARIOS.length) {
-    completeZone(SEMAFORO_SCENARIOS.length * 10);
+  if (semIdx >= semScenarios.length) {
+    completeZone(semScenarios.length * 10);
     return;
   }
-  const s = SEMAFORO_SCENARIOS[semIdx];
+  const s = semScenarios[semIdx];
   const body = document.getElementById('game-body');
   body.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
@@ -1299,7 +1468,7 @@ function renderSemaforo() {
         </div>
       </div>
     </div>
-    <div style="font-size:0.82rem;color:#666;margin-bottom:8px">Situación ${semIdx+1} de ${SEMAFORO_SCENARIOS.length}</div>
+    <div style="font-size:0.82rem;color:#666;margin-bottom:8px">Situación ${semIdx+1} de ${semScenarios.length}</div>
     <div class="semaforo-scenario">
       <div class="scenario-label">🚦 ¿Cómo clasificas esta conducta?</div>
       <div class="scenario-text">${s.text}</div>
@@ -1320,7 +1489,7 @@ function renderSemaforo() {
 }
 
 function answerSemaforo(color) {
-  const s = SEMAFORO_SCENARIOS[semIdx];
+  const s = semScenarios[semIdx];
   const isCorrect = color === s.correct;
   if (isCorrect) addScore(10);
   semIdx++;
@@ -1330,7 +1499,7 @@ function answerSemaforo(color) {
 // =============================================
 // ===== ZONA 3: VERDADERO / FALSO ============
 // =============================================
-const VF_QUESTIONS = [
+const VF_QUESTIONS_POOL = [
   {
     claim: "Si algo está publicado en internet es información verdadera porque 'alguien la subió'.",
     answer: false,
@@ -1366,25 +1535,57 @@ const VF_QUESTIONS = [
     answer: true,
     article: "Fact-checking y alfabetización mediática: la manipulación de imágenes reales fuera de su contexto original es una técnica muy usada para crear noticias falsas (fake news).",
     explanation: "VERDADERO. Una foto real puede ser usada fuera de contexto para crear una noticia falsa. Siempre verifica la fuente original de las imágenes antes de compartirlas."
+  },
+  {
+    claim: "Borrar una publicación significa que esa información desaparece de internet por completo.",
+    answer: false,
+    article: "Principio de permanencia digital: una vez publicado, el contenido puede haber sido guardado o capturado por otras personas antes de borrarlo. El borrado no garantiza su eliminación total.",
+    explanation: "FALSO. Aunque borres una publicación, otras personas pudieron haberla guardado, compartido o capturado antes. Piensa bien antes de publicar."
+  },
+  {
+    claim: "En Ecuador, puedes pedirle a una empresa que elimine tus datos personales de su sistema.",
+    answer: true,
+    article: "LOPDP, Art. 9 – Derecho de supresión: toda persona puede solicitar la eliminación de sus datos personales cuando ya no sean necesarios o se haya retirado el consentimiento.",
+    explanation: "VERDADERO. La LOPDP te da el derecho de solicitar que tus datos sean eliminados de las bases de datos de empresas o plataformas."
+  },
+  {
+    claim: "Un 'me gusta' o comentario en redes sociales nunca puede usarse como evidencia legal.",
+    answer: false,
+    article: "Pruebas digitales: capturas de pantalla, comentarios y mensajes pueden usarse como evidencia en una denuncia ante la Fiscalía si están relacionados con un delito.",
+    explanation: "FALSO. Comentarios, mensajes y capturas de pantalla sí pueden usarse como evidencia digital en procesos legales. Por eso es importante guardarlos."
+  },
+  {
+    claim: "Si una persona menor de edad comete un delito digital (como crear un perfil falso de otra persona), no tiene ninguna responsabilidad porque es menor de edad.",
+    answer: false,
+    article: "Código de la Niñez y Adolescencia y COIP: los y las adolescentes pueden tener responsabilidad penal juvenil según su edad, aplicada de forma diferenciada a la de los adultos, pero no quedan exentos.",
+    explanation: "FALSO. Los y las adolescentes también pueden enfrentar consecuencias legales (responsabilidad penal juvenil) por delitos digitales, aunque el proceso es diferente al de un adulto."
+  },
+  {
+    claim: "Las cuentas verificadas (con la insignia azul) siempre publican información 100% verdadera.",
+    answer: false,
+    article: "Alfabetización mediática: la verificación de cuenta certifica identidad, no la veracidad de cada contenido publicado. Cualquier cuenta puede compartir información incorrecta.",
+    explanation: "FALSO. Estar verificada solo confirma quién es el dueño de la cuenta, no garantiza que todo lo que publique sea cierto. Siempre debes contrastar la información."
   }
 ];
 
 let vfIdx = 0;
+let vfQuestions = [];
 
 function startVF() {
   vfIdx = 0;
+  vfQuestions = pickRandom(VF_QUESTIONS_POOL, 6);
   renderVF();
 }
 
 function renderVF() {
-  if (vfIdx >= VF_QUESTIONS.length) {
-    completeZone(VF_QUESTIONS.length * 10);
+  if (vfIdx >= vfQuestions.length) {
+    completeZone(vfQuestions.length * 10);
     return;
   }
-  const q = VF_QUESTIONS[vfIdx];
+  const q = vfQuestions[vfIdx];
   const body = document.getElementById('game-body');
   body.innerHTML = `
-    <div style="font-size:0.82rem;color:#666;margin-bottom:6px">Pregunta ${vfIdx+1} de ${VF_QUESTIONS.length}</div>
+    <div style="font-size:0.82rem;color:#666;margin-bottom:6px">Pregunta ${vfIdx+1} de ${vfQuestions.length}</div>
     <div class="tf-card">
       <div style="font-size:2rem">🔍</div>
       <div class="tf-claim">${q.claim}</div>
@@ -1398,7 +1599,7 @@ function renderVF() {
 }
 
 function answerVF(answer) {
-  const q = VF_QUESTIONS[vfIdx];
+  const q = vfQuestions[vfIdx];
   const isCorrect = answer === q.answer;
   if (isCorrect) addScore(10);
   vfIdx++;
@@ -1408,7 +1609,7 @@ function answerVF(answer) {
 // =============================================
 // ===== ZONA 4: DRAG AND DROP ================
 // =============================================
-const DND_ITEMS = [
+const DND_ITEMS_POOL = [
   { id: 'i1', text: 'Acceder a mis datos que tienen las empresas', category: 'derecho' },
   { id: 'i2', text: 'Publicar fotos mías sin mi permiso', category: 'vulneracion' },
   { id: 'i3', text: 'Denunciar ante la Fiscalía', category: 'proteccion' },
@@ -1419,6 +1620,11 @@ const DND_ITEMS = [
   { id: 'i8', text: 'Bloquear y reportar al agresor', category: 'proteccion' },
   { id: 'i9', text: 'Saber cómo usan mis datos personales', category: 'derecho' },
   { id: 'i10', text: 'Acudir al DECE o a un adulto de confianza', category: 'proteccion' },
+  { id: 'i11', text: 'Activar la verificación en dos pasos en mis cuentas', category: 'proteccion' },
+  { id: 'i12', text: 'Conocer qué empresas tienen acceso a mis datos personales', category: 'derecho' },
+  { id: 'i13', text: 'Decidir si quiero o no que usen mis datos para publicidad', category: 'derecho' },
+  { id: 'i14', text: 'Crear un perfil falso usando el nombre y fotos de otra persona', category: 'vulneracion' },
+  { id: 'i15', text: 'Espiar los mensajes privados de otra persona sin su consentimiento', category: 'vulneracion' },
 ];
 
 const DND_CATEGORIES = [
@@ -1435,10 +1641,23 @@ const DND_ARTICLES = {
 
 let dndPlaced = {};
 let dragId = null;
+let dndItems = [];
+
+// Elige al azar del banco manteniendo la misma proporción por categoría (3 derecho, 3 vulneración, 4 protección)
+function buildDndSelection() {
+  const counts = { derecho: 3, vulneracion: 3, proteccion: 4 };
+  let chosen = [];
+  Object.keys(counts).forEach(cat => {
+    const ofCategory = DND_ITEMS_POOL.filter(i => i.category === cat);
+    chosen = chosen.concat(pickRandom(ofCategory, counts[cat]));
+  });
+  return shuffleArray(chosen);
+}
 
 function startDnD() {
   dndPlaced = {};
-  DND_ITEMS.forEach(i => dndPlaced[i.id] = 'pool');
+  dndItems = buildDndSelection();
+  dndItems.forEach(i => dndPlaced[i.id] = 'pool');
   renderDnD();
 }
 
@@ -1472,7 +1691,7 @@ function renderDnD() {
       <div class="dnd-items-pool">
         <h3>Tarjetas para clasificar</h3>
         <div class="dnd-items" id="pool-items" ondragover="allowDrop(event)" ondrop="dropTo('pool',event)">
-          ${DND_ITEMS.filter(i => dndPlaced[i.id]==='pool').map(i => `
+          ${dndItems.filter(i => dndPlaced[i.id]==='pool').map(i => `
             <div class="dnd-item" id="dnd-${i.id}" draggable="true"
               ondragstart="startDrag('${i.id}')" ontouchstart="touchStart(event,'${i.id}')">${i.text}</div>`).join('')}
         </div>
@@ -1482,7 +1701,7 @@ function renderDnD() {
           <div class="dnd-category" id="cat-${cat.id}" ondragover="allowDrop(event)" ondrop="dropTo('${cat.id}',event)">
             <span class="dnd-category-label ${cat.css}">${cat.label}</span>
             <div class="dnd-items">
-              ${DND_ITEMS.filter(i => dndPlaced[i.id]===cat.id).map(i => `
+              ${dndItems.filter(i => dndPlaced[i.id]===cat.id).map(i => `
                 <div class="dnd-item" id="dnd-${i.id}" draggable="true"
                   ondragstart="startDrag('${i.id}')" ontouchstart="touchStart(event,'${i.id}')">${i.text}</div>`).join('')}
             </div>
@@ -1529,19 +1748,19 @@ document.addEventListener('touchend', function(e) {
 });
 
 function checkDnD() {
-  const inPool = DND_ITEMS.filter(i => dndPlaced[i.id]==='pool');
+  const inPool = dndItems.filter(i => dndPlaced[i.id]==='pool');
   if (inPool.length > 0) {
     alert('Aún hay tarjetas sin clasificar. ¡Arrástralas todas!');
     return;
   }
   let correct = 0;
-  DND_ITEMS.forEach(i => { if (dndPlaced[i.id] === i.category) correct++; });
-  const score = Math.round((correct / DND_ITEMS.length) * 40);
+  dndItems.forEach(i => { if (dndPlaced[i.id] === i.category) correct++; });
+  const score = Math.round((correct / dndItems.length) * 40);
   state.gameScore = score;
   document.getElementById('live-score').textContent = score;
 
   const body = document.getElementById('game-body');
-  const lines = DND_ITEMS.map(i => {
+  const lines = dndItems.map(i => {
     const ok = dndPlaced[i.id] === i.category;
     const catLabel = DND_CATEGORIES.find(c=>c.id===i.category)?.label || '';
     return `<li style="margin-bottom:6px;font-size:0.88rem">${ok?'✅':'❌'} <strong>${i.text}</strong> → ${catLabel}</li>`;
@@ -1551,7 +1770,7 @@ function checkDnD() {
     <div class="zone-complete-banner" style="background: linear-gradient(135deg, #1a6ea8, #0d4d7a)">
       <div style="font-size:2rem">⚖️</div>
       <h2>Resultado</h2>
-      <div class="score-display">${correct} / ${DND_ITEMS.length} correctas</div>
+      <div class="score-display">${correct} / ${dndItems.length} correctas</div>
       <p>Puntos: ${score} / 40</p>
     </div>
     <div style="background:white;border-radius:14px;padding:18px;box-shadow:var(--shadow);margin-bottom:16px">
@@ -1572,7 +1791,7 @@ function checkDnD() {
 // =============================================
 // ===== ZONA 5: DESAFÍO FINAL ================
 // =============================================
-const DILEMMAS = [
+const DILEMMAS_POOL = [
   {
     icon: "😰",
     title: "El mensaje que no pediste",
@@ -1629,24 +1848,97 @@ const DILEMMAS = [
     article: "Art. 396 COIP – Acoso. Ley Orgánica de Educación Intercultural: el ciberacoso escolar debe ser reportado al DECE y puede tener consecuencias legales para quienes lo ejercen.",
     explanation: "El ciberacoso no desaparece ignorándolo. Lo correcto es reportar, guardar evidencia y buscar apoyo. Responder con insultos puede agravar la situación."
   },
+  {
+    icon: "📍",
+    title: "La ubicación en tiempo real",
+    situation: "Daniela (15 años) comparte su ubicación en tiempo real en una historia de Instagram mientras está sola en un centro comercial. Un seguidor que no conoce en persona le escribe diciendo exactamente dónde está parada.",
+    question: "¿Qué debería hacer Daniela?",
+    options: [
+      { text: "Desactivar la ubicación de inmediato, ir hacia donde haya más gente conocida y contarle a un adulto de confianza.", type: 'best', score: 15 },
+      { text: "Borrar la historia pero quedarse en el mismo lugar.", type: 'ok', score: 6 },
+      { text: "Responder preguntando quién es antes de hacer algo más.", type: 'ok', score: 4 },
+      { text: "No darle importancia porque 'seguro es casualidad'.", type: 'risky', score: 0 },
+    ],
+    article: "Art. 173 COIP y LOPDP Art. 10: compartir ubicación en tiempo real puede facilitar que un desconocido te localice físicamente; es uno de los riesgos más serios de los datos de geolocalización.",
+    explanation: "Compartir tu ubicación exacta, incluso en una historia que 'se borra', puede exponerte a un peligro real. Lo correcto es desactivarla, alejarte y avisar a un adulto de confianza."
+  },
+  {
+    icon: "🤖",
+    title: "La imagen que no es real",
+    situation: "Iván (16 años) descubre que alguien usó una app de inteligencia artificial para crear una imagen falsa (deepfake) de una compañera del curso en una situación comprometedora y la está compartiendo en un grupo de clase.",
+    question: "¿Qué debe hacer Iván?",
+    options: [
+      { text: "No reenviar la imagen, reportarla a la plataforma y a las autoridades del colegio, y avisar a la compañera o a un adulto de confianza.", type: 'best', score: 15 },
+      { text: "Eliminar el chat para no involucrarse.", type: 'ok', score: 5 },
+      { text: "Avisar solo a la compañera, sin reportarlo al colegio.", type: 'ok', score: 8 },
+      { text: "Guardar la imagen 'por si la piden de evidencia' y compartirla con más amigos.", type: 'risky', score: 0 },
+    ],
+    article: "COIP Art. 178 (violación a la intimidad) y Art. 396 (acoso): crear o difundir imágenes falsas (deepfakes) de otra persona, aunque sean generadas por IA, constituye un delito digital grave en Ecuador.",
+    explanation: "Una imagen falsa generada con IA sigue dañando la reputación y dignidad de la persona real. No reenviar, reportar y dar apoyo a la víctima es lo correcto; guardarla o compartirla agrava el daño."
+  },
+  {
+    icon: "🎮",
+    title: "El amigo del videojuego",
+    situation: "Mateo (13 años) conoce a alguien en un videojuego en línea que dice tener 14 años, se hacen 'muy amigos' y esa persona le pide que mantengan en secreto su amistad porque 'sus papás no entenderían', y además le pide fotos suyas.",
+    question: "¿Qué debe hacer Mateo?",
+    options: [
+      { text: "Contarle a sus padres o a un adulto de confianza sobre esta persona y no enviar ninguna foto.", type: 'best', score: 15 },
+      { text: "Dejar de hablarle pero no contarle a nadie.", type: 'ok', score: 6 },
+      { text: "Mantener el secreto porque 'no quiere meterse en problemas'.", type: 'risky', score: 0 },
+      { text: "Enviar una foto para no perder esa amistad.", type: 'risky', score: 0 },
+    ],
+    article: "Art. 173 COIP – Contacto con finalidad sexual con menores de edad a través de medios digitales: pedir secretismo y fotos a un menor es una señal de alerta (grooming) sancionada por la ley.",
+    explanation: "Pedir secreto frente a los padres y solicitar fotos son señales claras de grooming. Lo correcto es romper el secreto y contarle a un adulto de confianza de inmediato."
+  },
+  {
+    icon: "💼",
+    title: "La oferta de trabajo perfecta",
+    situation: "Camila (17 años) recibe un mensaje en redes que le ofrece un trabajo de medio tiempo 'sin experiencia' y muy bien pagado, pero le piden que primero envíe una copia de su cédula y los datos de una cuenta bancaria 'para procesos de nómina'.",
+    question: "¿Qué debería hacer Camila?",
+    options: [
+      { text: "No enviar ningún documento, investigar si la empresa es real y verificar la oferta por canales oficiales antes de responder.", type: 'best', score: 15 },
+      { text: "Preguntar más detalles sobre la empresa antes de decidir.", type: 'ok', score: 7 },
+      { text: "Enviar solo la cédula pero no los datos bancarios.", type: 'ok', score: 5 },
+      { text: "Enviar todos los documentos porque 'la oferta es muy buena para dejarla pasar'.", type: 'risky', score: 0 },
+    ],
+    article: "COIP Art. 190 – Apropiación fraudulenta por medios electrónicos y Art. 229 – Revelación ilegal de bases de datos: pedir documentos de identidad y datos bancarios antes de una contratación real es un patrón típico de fraude (phishing laboral).",
+    explanation: "Las ofertas de trabajo que piden datos personales o bancarios antes de cualquier proceso formal suelen ser fraudes. Siempre verifica la legitimidad de la empresa antes de compartir información sensible."
+  },
+  {
+    icon: "📢",
+    title: "El secreto que no era mío",
+    situation: "Andrés (15 años) se entera de un problema personal y privado de un amigo (una situación familiar difícil) y, sin pensarlo, lo comenta en el grupo del curso 'porque le pareció interesante'.",
+    question: "¿Qué debió hacer Andrés en cambio?",
+    options: [
+      { text: "No compartir información personal de su amigo sin su consentimiento, sin importar el contexto.", type: 'best', score: 15 },
+      { text: "Compartirlo solo con su mejor amigo, en privado.", type: 'ok', score: 4 },
+      { text: "Compartirlo en el grupo pero pedir que 'no se lo cuenten a nadie más'.", type: 'risky', score: 0 },
+      { text: "Borrar el mensaje del grupo apenas se da cuenta del error.", type: 'ok', score: 7 },
+    ],
+    article: "LOPDP, Art. 7 y 9: la información personal y sensible de otra persona (incluida su vida familiar) no puede divulgarse sin su consentimiento, sin importar la intención o el medio.",
+    explanation: "La información privada de otra persona —aunque parezca un simple comentario— no debe compartirse sin su permiso. El daño a la confianza y reputación puede ser real, incluso sin mala intención."
+  },
 ];
 
 let dilemmaIdx = 0;
+let finalDilemmas = [];
 
 function startFinalChallenge() {
   dilemmaIdx = 0;
+  // Elige 4 dilemas al azar del banco y mezcla el orden de las opciones de cada uno
+  finalDilemmas = pickRandom(DILEMMAS_POOL, 4).map(d => ({ ...d, options: shuffleArray(d.options) }));
   renderDilemma();
 }
 
 function renderDilemma() {
-  if (dilemmaIdx >= DILEMMAS.length) {
-    completeZone(DILEMMAS.length * 15);
+  if (dilemmaIdx >= finalDilemmas.length) {
+    completeZone(finalDilemmas.length * 15);
     return;
   }
-  const d = DILEMMAS[dilemmaIdx];
+  const d = finalDilemmas[dilemmaIdx];
   const body = document.getElementById('game-body');
   body.innerHTML = `
-    <div style="font-size:0.82rem;color:#666;margin-bottom:8px">Dilema ${dilemmaIdx+1} de ${DILEMMAS.length}</div>
+    <div style="font-size:0.82rem;color:#666;margin-bottom:8px">Dilema ${dilemmaIdx+1} de ${finalDilemmas.length}</div>
     <div class="dilemma-card">
       <div class="dilemma-icon">${d.icon}</div>
       <strong style="display:block;font-size:0.85rem;color:#666;margin-bottom:8px">${d.title}</strong>
@@ -1662,7 +1954,7 @@ function renderDilemma() {
 }
 
 function answerDilemma(idx) {
-  const d = DILEMMAS[dilemmaIdx];
+  const d = finalDilemmas[dilemmaIdx];
   const opt = d.options[idx];
   addScore(opt.score);
   const isCorrect = opt.type === 'best';
