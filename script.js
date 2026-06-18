@@ -151,156 +151,40 @@ function restartGame() {
 }
 
 // =================== MAP RENDERING ===================
-// Posiciones de los 5 nodos sobre el tablero (viewBox 700x560), formando un camino en zigzag
-const BOARD_NODES = [
-  { x: 150, y: 150 },
-  { x: 330, y: 105 },
-  { x: 480, y: 175 },
-  { x: 320, y: 330 },
-  { x: 470, y: 460 },
-];
-const BOARD_START = { x: 70, y: 95 };
-
-function boardPathD() {
-  const pts = [BOARD_START, ...BOARD_NODES];
-  let d = `M ${pts[0].x} ${pts[0].y}`;
-  for (let i = 1; i < pts.length; i++) {
-    const prev = pts[i-1], cur = pts[i];
-    const mx = (prev.x + cur.x) / 2;
-    const my = (prev.y + cur.y) / 2;
-    // ligera curva alternando hacia arriba/abajo para que el camino serpentee
-    const bend = (i % 2 === 0) ? -28 : 28;
-    d += ` Q ${mx + bend} ${my} ${cur.x} ${cur.y}`;
-  }
-  return d;
-}
-
 function renderMap() {
+  const container = document.getElementById('zone-list');
+  container.innerHTML = '';
   const pct = (state.completed.length / ZONES.length) * 100;
   document.getElementById('main-progress').style.width = pct + '%';
 
-  const nodesSvg = ZONES.map((zone, idx) => {
+  ZONES.forEach((zone, idx) => {
     const isDone = state.completed.includes(zone.id);
     const isAvailable = idx === 0 || state.completed.includes(ZONES[idx-1].id);
     const isLocked = !isAvailable && !isDone;
-    const pos = BOARD_NODES[idx];
-    const cls = 'board-node' + (isLocked ? ' locked' : '') + (isDone ? ' completed' : '');
-    const clickAttr = isLocked ? '' : `onclick="startZone(ZONES[${idx}])"`;
-    const onEnter = `onmouseenter="showZoneDetail(${idx})"`;
 
-    let badge = '';
-    if (isDone) {
-      badge = `<circle class="board-node-badge-bg board-node-check-bg" cx="${pos.x+22}" cy="${pos.y-22}" r="11"/>
-                <text class="board-node-badge" x="${pos.x+22}" y="${pos.y-21}" fill="white">✓</text>`;
-    } else if (isLocked) {
-      badge = `<circle class="board-node-badge-bg board-node-lock-bg" cx="${pos.x+22}" cy="${pos.y-22}" r="11"/>
-                <text class="board-node-badge" x="${pos.x+22}" y="${pos.y-21}" fill="white">🔒</text>`;
+    const card = document.createElement('div');
+    card.className = 'zone-card' + (isLocked ? ' locked' : '') + (isDone ? ' completed' : '');
+    card.innerHTML = `
+      <div class="zone-icon">${zone.icon}</div>
+      <div class="zone-info">
+        <h3>${zone.title}</h3>
+        <p>${zone.subtitle}</p>
+        ${isDone ? `<div class="stars-earned">✅ ¡Completada! ${state.scores[zone.id] ? state.scores[zone.id].earned + '/' + state.scores[zone.id].max + ' pts' : ''}</div>` : ''}
+      </div>
+      <div>
+        <span class="zone-badge ${isDone ? 'badge-done' : isAvailable ? 'badge-available' : 'badge-locked'}">
+          ${isDone ? '✓ Hecho' : isAvailable ? 'Jugar' : '🔒'}
+        </span>
+      </div>`;
+    if (!isLocked) card.onclick = () => startZone(zone);
+    container.appendChild(card);
+
+    if (idx < ZONES.length - 1) {
+      const conn = document.createElement('div');
+      conn.className = 'connector';
+      container.appendChild(conn);
     }
-
-    return `
-      <g class="${cls}" ${clickAttr} ${onEnter} tabindex="0" role="button" aria-label="${zone.title}">
-        <circle class="board-node-circle" cx="${pos.x}" cy="${pos.y}" r="30"></circle>
-        <text class="board-node-icon" x="${pos.x}" y="${pos.y+1}">${zone.icon}</text>
-        ${badge}
-        <text class="board-node-label" x="${pos.x}" y="${pos.y+48}">Zona ${zone.id}</text>
-      </g>`;
-  }).join('');
-
-  const mapEl = document.getElementById('island-map');
-  mapEl.innerHTML = `
-    <svg class="board-svg" viewBox="0 0 700 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mapa de la Isla del Tesoro">
-      <defs>
-        <pattern id="oceanDots" width="46" height="46" patternUnits="userSpaceOnUse">
-          <circle cx="6" cy="6" r="1.4" fill="rgba(255,255,255,0.06)"/>
-          <circle cx="30" cy="22" r="1.1" fill="rgba(255,255,255,0.05)"/>
-        </pattern>
-      </defs>
-
-      <!-- Océano de fondo -->
-      <rect x="0" y="0" width="700" height="560" fill="#0a3d62"/>
-      <rect x="0" y="0" width="700" height="560" fill="url(#oceanDots)"/>
-
-      <!-- Isla superior izquierda (inicio) -->
-      <path d="M0,0 L210,0 Q230,60 170,110 Q120,150 60,150 Q10,150 0,120 Z" fill="#3a8c4e"/>
-      <path d="M0,0 L210,0 Q225,55 175,100 Q125,140 65,142" fill="none" stroke="#dfc89a" stroke-width="10" opacity="0.55"/>
-      <circle cx="35" cy="35" r="20" fill="#2c6b3a"/>
-      <circle cx="60" cy="25" r="16" fill="#347a42"/>
-      <rect x="32" y="40" width="6" height="16" fill="#5c3414"/>
-
-      <!-- Isla superior derecha (volcán) -->
-      <path d="M700,0 L520,0 Q500,60 560,100 Q610,135 660,130 Q700,125 700,90 Z" fill="#3a8c4e"/>
-      <path d="M700,0 L520,0 Q505,55 565,95" fill="none" stroke="#dfc89a" stroke-width="10" opacity="0.55"/>
-      <polygon points="630,95 600,40 660,40" fill="#5c4536"/>
-      <polygon points="612,95 600,68 624,68" fill="#e05a2b"/>
-      <ellipse cx="600" cy="28" rx="14" ry="8" fill="rgba(255,255,255,0.5)"/>
-
-      <!-- Isla inferior derecha (cofre) -->
-      <path d="M700,560 L480,560 Q460,500 530,460 Q610,415 700,425 Z" fill="#3a8c4e"/>
-      <path d="M700,560 L480,560 Q463,500 535,463" fill="none" stroke="#dfc89a" stroke-width="10" opacity="0.55"/>
-
-      <!-- Lago central -->
-      <ellipse cx="430" cy="280" rx="80" ry="48" fill="#bfe3f6" stroke="#dfc89a" stroke-width="8"/>
-      <path d="M370,275 Q405,263 440,275 T495,278" stroke="#9fd3ee" stroke-width="4" fill="none" opacity="0.7"/>
-      <path d="M380,292 Q415,283 450,292 T490,294" stroke="#9fd3ee" stroke-width="4" fill="none" opacity="0.6"/>
-
-      <!-- Barquito -->
-      <g transform="translate(150,470)">
-        <ellipse cx="0" cy="18" rx="34" ry="8" fill="rgba(255,255,255,0.15)"/>
-        <path d="M-26,12 Q0,28 26,12 L18,2 L-18,2 Z" fill="#a9692f"/>
-        <line x1="0" y1="2" x2="0" y2="-26" stroke="#5c3414" stroke-width="3"/>
-        <path d="M0,-24 L0,2 L20,2 Z" fill="#f4ede1"/>
-      </g>
-
-      <!-- Camino entre casillas -->
-      <path d="${boardPathD()}" fill="none" stroke="#dfc89a" stroke-width="8" stroke-dasharray="2 14" stroke-linecap="round" opacity="0.85"/>
-
-      <!-- Nodo de inicio -->
-      <g>
-        <ellipse cx="${BOARD_START.x}" cy="${BOARD_START.y}" rx="38" ry="26" fill="white"/>
-        <text class="board-start-label" x="${BOARD_START.x}" y="${BOARD_START.y+5}">INICIO</text>
-      </g>
-
-      <!-- Cofre del tesoro al final -->
-      <g transform="translate(${BOARD_NODES[4].x + 90}, ${BOARD_NODES[4].y + 25})">
-        <circle r="40" fill="white"/>
-        <g transform="translate(-20,-15) scale(0.8)">
-          <ellipse cx="20" cy="13" rx="22" ry="6" fill="#3a200c"/>
-          <rect x="0" y="14" width="40" height="18" rx="4" fill="#a9692f" stroke="#5c3414" stroke-width="1.5"/>
-          <path d="M0,15 Q0,0 20,0 Q40,0 40,15 Z" fill="#c98a3e" stroke="#5c3414" stroke-width="1.5"/>
-          <rect x="16" y="6" width="8" height="6" rx="1.5" fill="#f4c430"/>
-        </g>
-      </g>
-
-      ${nodesSvg}
-    </svg>
-  `;
-
-  showZoneDetail(firstActionableZoneIdx());
-}
-
-function firstActionableZoneIdx() {
-  for (let idx = 0; idx < ZONES.length; idx++) {
-    if (!state.completed.includes(ZONES[idx].id)) return idx;
-  }
-  return ZONES.length - 1;
-}
-
-function showZoneDetail(idx) {
-  const zone = ZONES[idx];
-  const isDone = state.completed.includes(zone.id);
-  const isAvailable = idx === 0 || state.completed.includes(ZONES[idx-1].id);
-  const isLocked = !isAvailable && !isDone;
-  const detail = document.getElementById('zone-detail');
-  let statusLine = '';
-  if (isDone) {
-    const sc = state.scores[zone.id];
-    statusLine = `✅ ¡Completada! ${sc ? sc.earned + '/' + sc.max + ' pts' : ''}`;
-  } else if (isLocked) {
-    statusLine = '🔒 Completa la zona anterior para desbloquear';
-  } else {
-    statusLine = '👉 Toca la casilla para jugar';
-  }
-  detail.innerHTML = `<p><strong>${zone.icon} ${zone.title}</strong> — ${zone.subtitle}<br>${statusLine}</p>`;
+  });
 }
 
 // =================== FEEDBACK ===================

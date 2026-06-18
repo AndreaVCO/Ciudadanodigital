@@ -67,68 +67,57 @@
     .progress-bar-wrap { background: rgba(255,255,255,0.2); border-radius: 40px; height: 12px; width: 260px; margin: 10px auto 0; overflow: hidden; }
     .progress-bar { height: 100%; background: var(--yellow); border-radius: 40px; transition: width 0.5s ease; }
 
-    .island-map-wrap {
-      width: 100%;
-      max-width: 640px;
-      border-radius: 24px;
-      overflow: hidden;
-      border: 3px solid rgba(255,255,255,0.2);
-      box-shadow: 0 12px 30px rgba(0,0,0,0.35);
-    }
     .island-map {
       position: relative;
       width: 100%;
-      display: block;
+      max-width: 640px;
+      background: #1d7aba;
+      border-radius: 24px;
+      padding: 28px;
+      border: 3px solid rgba(255,255,255,0.2);
     }
-    .board-svg { display: block; width: 100%; height: auto; }
-
-    /* Nodo de zona sobre el tablero */
-    .board-node { cursor: pointer; }
-    .board-node.locked { cursor: not-allowed; }
-    .board-node-circle {
-      fill: var(--white);
-      stroke: rgba(0,0,0,0.15);
-      stroke-width: 2;
-      transition: transform 0.15s ease, filter 0.15s ease;
-      transform-origin: center;
+    .map-path {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
-    .board-node:hover:not(.locked) .board-node-circle { transform: scale(1.08); filter: brightness(1.05); }
-    .board-node.locked .board-node-circle { fill: rgba(255,255,255,0.55); }
-    .board-node.completed .board-node-circle { stroke: var(--yellow); stroke-width: 4; }
-    .board-node-icon { font-size: 1.7rem; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
-    .board-node.locked .board-node-icon { opacity: 0.45; }
-    .board-node-badge {
-      font-size: 0.78rem;
-      text-anchor: middle;
-      dominant-baseline: central;
-      pointer-events: none;
+    .zone-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(255,255,255,0.12);
+      border: 2px solid rgba(255,255,255,0.25);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
     }
-    .board-node-badge-bg { stroke: white; stroke-width: 2; }
-    .board-node-check-bg { fill: #27ae60; }
-    .board-node-lock-bg { fill: rgba(0,0,0,0.25); }
-    .board-node-label {
-      font-family: 'Fredoka One', cursive;
-      font-size: 0.8rem;
-      text-anchor: middle;
-      fill: var(--white);
-      paint-order: stroke;
-      stroke: rgba(0,0,0,0.55);
-      stroke-width: 4px;
-      pointer-events: none;
+    .zone-card:hover:not(.locked) { background: rgba(255,255,255,0.2); transform: translateX(4px); }
+    .zone-card.locked { opacity: 0.5; cursor: not-allowed; }
+    .zone-card.completed { border-color: var(--yellow); background: rgba(240,180,41,0.15); }
+    .zone-icon { font-size: 2.4rem; width: 52px; text-align: center; flex-shrink: 0; }
+    .zone-info { flex: 1; }
+    .zone-info h3 { color: var(--white); font-size: 1rem; margin-bottom: 2px; }
+    .zone-info p { color: rgba(255,255,255,0.7); font-size: 0.82rem; }
+    .zone-badge {
+      font-size: 0.72rem;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-weight: 700;
+      text-transform: uppercase;
     }
-    .board-start-label {
-      font-family: 'Fredoka One', cursive;
-      font-size: 0.95rem;
-      text-anchor: middle;
-      fill: #1a2e1a;
+    .badge-locked { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.5); }
+    .badge-available { background: var(--yellow); color: #5a3a00; }
+    .badge-done { background: #27ae60; color: white; }
+    .connector {
+      width: 2px;
+      height: 16px;
+      background: rgba(255,255,255,0.3);
+      margin: 0 auto;
+      margin-left: 40px;
+      border-radius: 2px;
     }
-    .board-legend {
-      background: #0d4d7a;
-      padding: 10px 16px 14px;
-      text-align: center;
-      min-height: 20px;
-    }
-    .board-legend p { color: rgba(255,255,255,0.65); font-size: 0.78rem; margin: 0; }
     .stars-earned { color: var(--yellow); font-size: 0.85rem; }
 
     /* ====== GAME SHELL ====== */
