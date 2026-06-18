@@ -392,7 +392,7 @@ const MEMORY_PAIRS = [
     article: "Art. 178 COIP – Violación a la intimidad: publicar imágenes propias o ajenas sin consentimiento puede tener consecuencias legales y personales permanentes." },
   { term: "🔐 Uso la misma contraseña para todo", def: "⚠️ Si hackean una cuenta, pierdo el acceso a todas",
     article: "Art. 66, numeral 19 de la Constitución del Ecuador: tus datos están protegidos. Una contraseña robada puede derivar en suplantación de identidad (Art. 212 COIP)." },
-  { term: "📱 Doy mi número a alguien que conocí en línea", def: "⚠️ Pueden contactarme o acosarme sin mi permiso",
+  { term: "📱 Doy mi número a alguien que conocí en línea", def: "⚠️ Pueden contactarme sin mi permiso o acosarme",
     article: "LOPDP, Art. 10 – Principio de confidencialidad: tu número de teléfono es un dato personal. Compartirlo sin control puede exponerte a acoso o fraude." },
   { term: "📧 Uso mi correo personal para registrarme en todo", def: "⚠️ Mi identidad puede ser suplantada o mi cuenta robada",
     article: "Art. 212 COIP – Suplantación de identidad: usar el correo de otra persona para hacerse pasar por ella es un delito penado en Ecuador." },
