@@ -150,6 +150,45 @@ function restartGame() {
   showScreen('screen-intro');
 }
 
+// =================== PERSONAJE DEL MAPA ===================
+let mapCharInitialized = false;
+let isTraveling = false;
+
+function getIconCenter(iconEl) {
+  const islandMap = document.querySelector('.island-map');
+  const iconRect = iconEl.getBoundingClientRect();
+  const mapRect = islandMap.getBoundingClientRect();
+  return {
+    top: iconRect.top - mapRect.top + iconRect.height / 2,
+    left: iconRect.left - mapRect.left + iconRect.width / 2
+  };
+}
+
+function placeCharacterAt(iconEl, animate) {
+  const charEl = document.getElementById('map-character');
+  if (!charEl || !iconEl) return;
+  const { top, left } = getIconCenter(iconEl);
+  if (!animate) charEl.style.transition = 'none';
+  charEl.style.top = top + 'px';
+  charEl.style.left = left + 'px';
+  if (!animate) {
+    requestAnimationFrame(() => { charEl.style.transition = ''; });
+  }
+}
+
+function travelToZone(zone, idx) {
+  if (isTraveling) return;
+  isTraveling = true;
+  const iconEls = document.querySelectorAll('#zone-list .zone-icon');
+  const cards = document.querySelectorAll('#zone-list .zone-card');
+  placeCharacterAt(iconEls[idx], true);
+  setTimeout(() => {
+    if (cards[idx]) cards[idx].classList.add('zone-arriving');
+    isTraveling = false;
+    startZone(zone);
+  }, 600);
+}
+
 // =================== MAP RENDERING ===================
 function renderMap() {
   const container = document.getElementById('zone-list');
@@ -176,7 +215,7 @@ function renderMap() {
           ${isDone ? '✓ Hecho' : isAvailable ? 'Jugar' : '🔒'}
         </span>
       </div>`;
-    if (!isLocked) card.onclick = () => startZone(zone);
+    if (!isLocked) card.onclick = () => travelToZone(zone, idx);
     container.appendChild(card);
 
     if (idx < ZONES.length - 1) {
@@ -184,6 +223,14 @@ function renderMap() {
       conn.className = 'connector';
       container.appendChild(conn);
     }
+  });
+
+  // Coloca al personaje en la zona actual (la próxima disponible, o la última si ya completó todo)
+  const currentIdx = Math.min(state.completed.length, ZONES.length - 1);
+  requestAnimationFrame(() => {
+    const iconEls = container.querySelectorAll('.zone-icon');
+    placeCharacterAt(iconEls[currentIdx], mapCharInitialized);
+    mapCharInitialized = true;
   });
 }
 
