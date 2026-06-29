@@ -446,13 +446,13 @@ function showZoneDetail(idx) {
 
 // =================== FEEDBACK ===================
 let feedbackCallback = null;
-function showFeedback(isCorrect, article, explanation, cb) {
+function showFeedback(isCorrect, article, explanation, cb, label) {
   const overlay = document.getElementById('feedback-overlay');
   document.getElementById('fb-icon').textContent = isCorrect ? '🎉' : '💡';
   const title = document.getElementById('fb-title');
   title.textContent = isCorrect ? '¡Correcto!' : 'Aprendamos de esto';
   title.className = 'feedback-title ' + (isCorrect ? 'correct' : 'wrong');
-  document.getElementById('fb-article').innerHTML = `<strong>📋 Marco Legal</strong>${article}`;
+  document.getElementById('fb-article').innerHTML = `<strong>${label || '📋 Marco Legal'}</strong>${article}`;
   document.getElementById('fb-explanation').textContent = explanation;
   feedbackCallback = cb;
   overlay.classList.add('show');
@@ -644,24 +644,28 @@ function pickRandom(pool, n) {
 // ===== ZONA 1: MEMORIA ======================
 // =============================================
 const MEMORY_PAIRS = [
-  { icon1: "🪪", term: "Nombre completo", icon2: "🎭", def: "Riesgo de suplantación de identidad",
-    article: "Art. 212 COIP – Suplantación de identidad: usar el nombre de otra persona para hacerse pasar por ella es un delito. Tu nombre completo es un dato que debes cuidar." },
-  { icon1: "🏠", term: "Dirección de casa", icon2: "🐺", def: "Riesgo de acoso o seguimiento",
-    article: "LOPDP, Art. 10 – Principio de seguridad: tu domicilio es un dato sensible. Si lo conoce alguien con malas intenciones, puede ubicarte físicamente." },
-  { icon1: "📱", term: "Número de teléfono", icon2: "📵", def: "Riesgo de llamadas o mensajes no deseados",
-    article: "LOPDP, Art. 10 – Principio de confidencialidad: tu número es un dato personal. Compartirlo sin control puede exponerte a acoso, fraude o spam." },
-  { icon1: "🌐", term: "Perfil en redes sociales", icon2: "👣", def: "Deja huella digital permanente",
-    article: "Todo lo que publicas construye tu huella digital: aunque lo borres, puede quedar guardado, compartido o capturado por otros para siempre." },
-  { icon1: "📸", term: "Fotos personales", icon2: "🔓", def: "Pueden usarse sin tu permiso",
-    article: "Art. 178 COIP – Violación a la intimidad: tus fotos te pertenecen. Usarlas, editarlas o compartirlas sin tu consentimiento puede ser un delito." },
-  { icon1: "🔑", term: "Contraseña", icon2: "🕵️", def: "Riesgo de hackeo de cuentas",
-    article: "Constitución, Art. 66 num. 19: tus datos están protegidos. Si roban tu contraseña, pueden entrar a tus cuentas y suplantarte (Art. 212 COIP)." },
-  { icon1: "🎂", term: "Fecha de nacimiento", icon2: "🔢", def: "Puede ayudar a adivinar tus contraseñas",
-    article: "Muchas contraseñas y preguntas de seguridad usan la fecha de nacimiento. Publicarla facilita que alguien intente entrar a tus cuentas." },
-  { icon1: "✉️", term: "Correo electrónico", icon2: "🎣", def: "Riesgo de correos o enlaces de phishing (engaño)",
-    article: "Art. 234 COIP – Delitos informáticos: con tu correo, pueden enviarte enlaces falsos para robar tus datos o instalar virus sin que lo notes." },
-  { icon1: "🎯", term: "Intereses y actividades", icon2: "🤖", def: "Los usan para crear perfiles falsos sobre ti",
-    article: "LOPDP, Art. 7 – Autodeterminación informativa: tus gustos y rutinas, sumados a otros datos, permiten que alguien construya un perfil falso o te manipule." },
+  { icon1: "🔑", term: "Compartir contraseña", icon2: "🕵️", def: "Cuenta hackeada",
+    article: "Constitución, Art. 66 num. 19: tus datos están protegidos. Compartir tu contraseña, incluso con alguien de confianza, abre la puerta a que otros entren a tu cuenta sin control." },
+  { icon1: "🔐", term: "Usar la misma contraseña en todo", icon2: "🔓", def: "Acceso a múltiples cuentas",
+    article: "Art. 212 COIP – Suplantación de identidad: si hackean una cuenta y usas la misma clave en todas, el atacante puede entrar a todas tus cuentas con un solo dato." },
+  { icon1: "🌐", term: "Aceptar solicitudes de desconocidos", icon2: "🐺", def: "Acoso o grooming",
+    article: "LOPDP, Art. 7 – Autodeterminación informativa: decidir quién ve tu información es un derecho. Aceptar desconocidos te expone a manipulación o acoso (grooming)." },
+  { icon1: "📍", term: "Publicar ubicación en tiempo real", icon2: "👁️", def: "Riesgo de seguimiento",
+    article: "LOPDP, Art. 10 – Principio de seguridad: tu ubicación es un dato sensible. Compartirla en tiempo real permite que alguien sepa exactamente dónde estás." },
+  { icon1: "🎣", term: "Hacer clic en enlaces sospechosos", icon2: "🗃️", def: "Robo de datos personales",
+    article: "Art. 234 COIP – Delitos informáticos: los enlaces de phishing imitan sitios reales para robar tus datos personales o financieros en segundos." },
+  { icon1: "📲", term: "Descargar apps de sitios no oficiales", icon2: "🦠", def: "Instalación de malware",
+    article: "Art. 234 COIP – Ataques a la integridad de sistemas informáticos: las apps fuera de tiendas oficiales pueden traer virus que roban tu información sin que lo notes." },
+  { icon1: "🤳", term: "Participar en retos virales peligrosos", icon2: "🚑", def: "Daño físico o exposición riesgosa",
+    label: "💡 Dato clave",
+    article: "Muchos retos virales priorizan las vistas y los 'likes' sobre tu seguridad real. Antes de participar, pregúntate si vale la pena el riesgo." },
+  { icon1: "🔥", term: "Enviar fotos íntimas", icon2: "📤", def: "Difusión sin consentimiento",
+    article: "Art. 178 COIP – Violación a la intimidad: una vez enviada una imagen, pierdes el control sobre ella. Compartirla sin tu permiso es un delito." },
+  { icon1: "🔓", term: "No configurar privacidad en redes", icon2: "📢", def: "Exposición de información personal",
+    article: "LOPDP, Art. 4: si no configuras tu privacidad, cualquier persona puede ver y usar tus datos personales, no solo tus contactos." },
+  { icon1: "📰", term: "Creer en noticias falsas sin verificar", icon2: "❌", def: "Desinformación y malas decisiones",
+    label: "💡 Dato clave",
+    article: "Verificar la fuente antes de compartir o creer una noticia evita que tomes decisiones basadas en información falsa, y previene que ayudes a difundirla." },
 ];
 
 let memFlipped = [];
@@ -747,7 +751,7 @@ function flipMemCard(idx) {
           if (memMatched.length === memPlayCount) {
             setTimeout(() => completeZone(memPlayCount * 10), 400);
           }
-        });
+        }, termCard.label);
     } else {
       setTimeout(() => {
         memFlipped = [];
