@@ -446,13 +446,13 @@ function showZoneDetail(idx) {
 
 // =================== FEEDBACK ===================
 let feedbackCallback = null;
-function showFeedback(isCorrect, article, explanation, cb, label) {
+function showFeedback(isCorrect, article, explanation, cb) {
   const overlay = document.getElementById('feedback-overlay');
   document.getElementById('fb-icon').textContent = isCorrect ? '🎉' : '💡';
   const title = document.getElementById('fb-title');
   title.textContent = isCorrect ? '¡Correcto!' : 'Aprendamos de esto';
   title.className = 'feedback-title ' + (isCorrect ? 'correct' : 'wrong');
-  document.getElementById('fb-article').innerHTML = `<strong>${label || '📋 Marco Legal'}</strong>${article}`;
+  document.getElementById('fb-article').innerHTML = `<strong>📋 Marco Legal</strong>${article}`;
   document.getElementById('fb-explanation').textContent = explanation;
   feedbackCallback = cb;
   overlay.classList.add('show');
@@ -644,28 +644,28 @@ function pickRandom(pool, n) {
 // ===== ZONA 1: MEMORIA ======================
 // =============================================
 const MEMORY_PAIRS = [
-  { icon1: "🔑", term: "Compartir contraseña", icon2: "🕵️", def: "Cuenta hackeada",
-    article: "Constitución, Art. 66 num. 19: tus datos están protegidos. Compartir tu contraseña, incluso con alguien de confianza, abre la puerta a que otros entren a tu cuenta sin control." },
-  { icon1: "🔐", term: "Usar la misma contraseña en todo", icon2: "🔓", def: "Acceso a múltiples cuentas",
-    article: "Art. 212 COIP – Suplantación de identidad: si hackean una cuenta y usas la misma clave en todas, el atacante puede entrar a todas tus cuentas con un solo dato." },
-  { icon1: "🌐", term: "Aceptar solicitudes de desconocidos", icon2: "🐺", def: "Acoso o grooming",
-    article: "LOPDP, Art. 7 – Autodeterminación informativa: decidir quién ve tu información es un derecho. Aceptar desconocidos te expone a manipulación o acoso (grooming)." },
-  { icon1: "📍", term: "Publicar ubicación en tiempo real", icon2: "👁️", def: "Riesgo de seguimiento",
-    article: "LOPDP, Art. 10 – Principio de seguridad: tu ubicación es un dato sensible. Compartirla en tiempo real permite que alguien sepa exactamente dónde estás." },
-  { icon1: "🎣", term: "Hacer clic en enlaces sospechosos", icon2: "🗃️", def: "Robo de datos personales",
-    article: "Art. 234 COIP – Delitos informáticos: los enlaces de phishing imitan sitios reales para robar tus datos personales o financieros en segundos." },
-  { icon1: "📲", term: "Descargar apps de sitios no oficiales", icon2: "🦠", def: "Instalación de malware",
-    article: "Art. 234 COIP – Ataques a la integridad de sistemas informáticos: las apps fuera de tiendas oficiales pueden traer virus que roban tu información sin que lo notes." },
-  { icon1: "🤳", term: "Participar en retos virales peligrosos", icon2: "🚑", def: "Daño físico o exposición riesgosa",
-    label: "💡 Dato clave",
-    article: "Muchos retos virales priorizan las vistas y los 'likes' sobre tu seguridad real. Antes de participar, pregúntate si vale la pena el riesgo." },
-  { icon1: "🔥", term: "Enviar fotos íntimas", icon2: "📤", def: "Difusión sin consentimiento",
-    article: "Art. 178 COIP – Violación a la intimidad: una vez enviada una imagen, pierdes el control sobre ella. Compartirla sin tu permiso es un delito." },
-  { icon1: "🔓", term: "No configurar privacidad en redes", icon2: "📢", def: "Exposición de información personal",
-    article: "LOPDP, Art. 4: si no configuras tu privacidad, cualquier persona puede ver y usar tus datos personales, no solo tus contactos." },
-  { icon1: "📰", term: "Creer en noticias falsas sin verificar", icon2: "❌", def: "Desinformación y malas decisiones",
-    label: "💡 Dato clave",
-    article: "Verificar la fuente antes de compartir o creer una noticia evita que tomes decisiones basadas en información falsa, y previene que ayudes a difundirla." },
+  { term: "📍 Comparto mi ubicación en una historia", def: "⚠️ Un desconocido puede saber dónde estoy",
+    article: "LOPDP, Art. 10 – Principio de seguridad: tu ubicación es un dato sensible. Compartirla sin cuidado puede exponerte a situaciones de riesgo real." },
+  { term: "🤳 Publico una foto mía sin revisar la privacidad", def: "⚠️ Esa imagen puede quedarse en internet para siempre",
+    article: "Art. 178 COIP – Violación a la intimidad: publicar imágenes propias o ajenas sin consentimiento puede tener consecuencias legales y personales permanentes." },
+  { term: "🔐 Uso la misma contraseña para todo", def: "⚠️ Si hackean una cuenta, pierdo el acceso a todas",
+    article: "Art. 66, numeral 19 de la Constitución del Ecuador: tus datos están protegidos. Una contraseña robada puede derivar en suplantación de identidad (Art. 212 COIP)." },
+  { term: "📱 Doy mi número a alguien que conocí en línea", def: "⚠️ Pueden contactarme sin mi permiso o acosarme",
+    article: "LOPDP, Art. 10 – Principio de confidencialidad: tu número de teléfono es un dato personal. Compartirlo sin control puede exponerte a acoso o fraude." },
+  { term: "📧 Uso mi correo personal para registrarme en todo", def: "⚠️ Mi identidad puede ser suplantada o mi cuenta robada",
+    article: "Art. 212 COIP – Suplantación de identidad: usar el correo de otra persona para hacerse pasar por ella es un delito penado en Ecuador." },
+  { term: "💬 Comparto información personal en un chat grupal", def: "⚠️ No sabes quién más puede ver o usar esa información",
+    article: "LOPDP, Art. 10 – Principio de consentimiento: antes de compartir información personal en línea, piensa en las consecuencias. La ley te da el derecho a decidir." },
+  { term: "🌐 Acepto solicitudes de amistad de gente que no conozco", def: "⚠️ Le doy acceso a mi información a un extraño",
+    article: "LOPDP, Art. 7 – Autodeterminación informativa: decidir quién ve tu información es un derecho. Aceptar desconocidos amplía quién puede acceder a tus datos." },
+  { term: "🎮 Descargo apps o juegos piratas sin revisar su origen", def: "⚠️ Pueden tener virus y robar mis datos sin que lo note",
+    article: "Art. 234 COIP – Ataques a la integridad de sistemas informáticos: muchas apps no oficiales distribuyen programas maliciosos que comprometen tu información." },
+  { term: "🕵️ Reviso el celular de mi pareja o amigo/a sin permiso", def: "⚠️ Estoy violando su privacidad aunque confíe en mí",
+    article: "Constitución del Ecuador, Art. 66 num. 21: el secreto de las comunicaciones es un derecho. Ninguna relación de confianza lo anula." },
+  { term: "🎥 Grabo a alguien sin que lo sepa y lo subo a redes", def: "⚠️ Puede ser un delito aunque diga que es 'broma'",
+    article: "Art. 178 COIP – Violación a la intimidad: grabar o difundir a una persona sin su consentimiento está sancionado, sin importar la intención." },
+  { term: "🛒 Comparto los datos de la tarjeta de mis padres para comprar en línea", def: "⚠️ Pueden robar el dinero o usar esos datos sin autorización",
+    article: "Art. 190 COIP – Apropiación fraudulenta por medios electrónicos: compartir datos financieros, incluso sin mala intención, abre la puerta a un fraude." },
 ];
 
 let memFlipped = [];
@@ -680,8 +680,8 @@ function startMemory() {
   memPlayCount = pairs.length;
   const items = [];
   pairs.forEach((p, i) => {
-    items.push({ id: i, side: 'term', icon: p.icon1, text: p.term, match: i, article: p.article, defText: p.def });
-    items.push({ id: i + pairs.length, side: 'def', icon: p.icon2, text: p.def, match: i, article: p.article, termText: p.term });
+    items.push({ id: i, side: 'term', text: p.term, match: i, article: p.article, defText: p.def });
+    items.push({ id: i + pairs.length, side: 'def', text: p.def, match: i, article: p.article, termText: p.term });
   });
   // Shuffle
   for (let i = items.length - 1; i > 0; i--) {
@@ -693,7 +693,7 @@ function startMemory() {
   const body = document.getElementById('game-body');
   body.innerHTML = `
     <div class="mem-instructions">
-      Cada dato tuyo cuenta algo de quién eres. Encuentra las parejas entre <strong>tus datos personales</strong> y el <strong>riesgo o consecuencia</strong> que pueden traer si los compartes sin cuidado. ¡Piensa antes de elegir!
+      En internet, cada dato que compartes tiene un riesgo. Voltea las tarjetas y encuentra las parejas. <strong>¿Sabes qué puede pasar si no proteges tu información?</strong>
     </div>
     <div class="memory-grid" id="mem-grid"></div>
     <div id="mem-match-info"></div>
@@ -712,10 +712,7 @@ function renderMemGrid() {
     el.style.position = 'relative';
     el.innerHTML = `
       <div class="mem-card-front">❓</div>
-      <div class="mem-card-back">
-        <span class="mem-card-icon">${card.icon}</span>
-        <span class="mem-card-text">${card.text}</span>
-      </div>
+      <div class="mem-card-back" style="font-size:0.72rem;text-align:center;padding:6px;line-height:1.3">${card.text}</div>
     `;
     if (!isMatched) el.onclick = () => flipMemCard(idx);
     grid.appendChild(el);
@@ -742,16 +739,16 @@ function flipMemCard(idx) {
       document.getElementById('mem-match-info').innerHTML = `
         <div class="mem-pair-label">
           <strong>✅ ¡Pareja encontrada!</strong><br>
-          ${termCard.icon} ${termCard.text} = ${defCard.icon} ${defCard.text}
+          ${termCard.text} = ${defCard.text}
         </div>`;
       showFeedback(true, termCard.article,
-        `${termCard.icon} ${termCard.text} → ${defCard.icon} ${defCard.text}`,
+        `${termCard.text} → ${defCard.text}`,
         () => {
           renderMemGrid();
           if (memMatched.length === memPlayCount) {
             setTimeout(() => completeZone(memPlayCount * 10), 400);
           }
-        }, termCard.label);
+        });
     } else {
       setTimeout(() => {
         memFlipped = [];
