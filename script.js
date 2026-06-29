@@ -58,7 +58,19 @@ function saveState() {
 function loadState() {
   try {
     const s = localStorage.getItem('cdState');
-    if (s) state = JSON.parse(s);
+    if (s) {
+      const p = JSON.parse(s);
+      // Reconstruimos el estado validando cada campo, así nunca se rompe
+      // si quedó guardada una versión anterior o incompleta en este navegador.
+      state = {
+        completed: Array.isArray(p.completed) ? p.completed : [],
+        scores: (p.scores && typeof p.scores === 'object') ? p.scores : {},
+        currentZone: p.currentZone || null,
+        gameScore: typeof p.gameScore === 'number' ? p.gameScore : 0,
+        totalScore: typeof p.totalScore === 'number' ? p.totalScore : 0,
+        feedbackQueue: Array.isArray(p.feedbackQueue) ? p.feedbackQueue : [],
+      };
+    }
   } catch(e){}
 }
 loadState();
@@ -73,6 +85,7 @@ function showScreen(id) {
 function showMap() {
   renderMap();
   showScreen('screen-map');
+
 }
 
 function showFinal() {
@@ -151,130 +164,260 @@ function restartGame() {
 }
 
 // =================== MAP RENDERING ===================
-// Posiciones de los 5 nodos sobre el tablero (viewBox 700x560), formando un camino en zigzag
-const BOARD_NODES = [
-  { x: 150, y: 150 },
-  { x: 330, y: 105 },
-  { x: 480, y: 175 },
-  { x: 320, y: 330 },
-  { x: 470, y: 460 },
-];
-const BOARD_START = { x: 70, y: 95 };
+// ViewBox SVG superpuesto: 1000 x 707
+// Coordenadas calibradas por el usuario
 
-function boardPathD() {
-  const pts = [BOARD_START, ...BOARD_NODES];
-  let d = `M ${pts[0].x} ${pts[0].y}`;
-  for (let i = 1; i < pts.length; i++) {
-    const prev = pts[i-1], cur = pts[i];
-    const mx = (prev.x + cur.x) / 2;
-    const my = (prev.y + cur.y) / 2;
-    // ligera curva alternando hacia arriba/abajo para que el camino serpentee
-    const bend = (i % 2 === 0) ? -28 : 28;
-    d += ` Q ${mx + bend} ${my} ${cur.x} ${cur.y}`;
+const START_POS       = { x: 175, y: 105 };
+const CHEST_POS       = { x: 861, y: 583 };
+
+const ZONE_NODES = [
+  { x: 128, y: 347, color: '#e91e8c', label: 'Z1' },
+  { x: 553, y: 163, color: '#2e7d32', label: 'Z2' },
+  { x: 895, y: 342, color: '#f9a825', label: 'Z3' },
+  { x: 578, y: 431, color: '#7b1fa2', label: 'Z4' },
+  { x: 561, y: 635, color: '#1565c0', label: 'Z5' },
+];
+
+const PATH_CELLS = [
+  { x: 175, y: 105 }, // 0  INICIO
+  { x: 128, y: 195 }, // 1
+  { x: 100, y: 270 }, // 2
+  { x: 128, y: 347 }, // 3  ZONA 1
+  { x: 200, y: 375 }, // 4
+  { x: 278, y: 340 }, // 5
+  { x: 355, y: 285 }, // 6
+  { x: 445, y: 220 }, // 7
+  { x: 553, y: 163 }, // 8  ZONA 2
+  { x: 638, y: 163 }, // 9
+  { x: 718, y: 175 }, // 10
+  { x: 800, y: 205 }, // 11
+  { x: 860, y: 268 }, // 12
+  { x: 895, y: 342 }, // 13 ZONA 3
+  { x: 870, y: 415 }, // 14
+  { x: 810, y: 450 }, // 15
+  { x: 740, y: 460 }, // 16
+  { x: 670, y: 455 }, // 17
+  { x: 578, y: 431 }, // 18 ZONA 4
+  { x: 510, y: 460 }, // 19
+  { x: 445, y: 490 }, // 20
+  { x: 480, y: 555 }, // 21
+  { x: 561, y: 635 }, // 22 ZONA 5
+  { x: 650, y: 620 }, // 23
+  { x: 750, y: 600 }, // 24
+  { x: 861, y: 583 }, // 25 COFRE
+];
+
+const ZONE_CELL_INDICES = [3, 8, 13, 18, 22];
+const CHEST_CELL_IDX    = 25;
+
+// Posición actual del personaje — SIEMPRE empieza en 0 (INICIO)
+// Se restaura desde estado guardado en renderMap()
+let charCellIdx = 0;
+
+function getCellPos(idx) {
+  return PATH_CELLS[Math.max(0, Math.min(idx, PATH_CELLS.length - 1))];
+}
+
+function getCharCellIdxForState() {
+  // El personaje queda en la celda de la última zona completada.
+  // Si no hay ninguna, queda en INICIO (índice 0).
+  let best = 0;
+  for (let zi = 0; zi < ZONES.length; zi++) {
+    if (state.completed.includes(ZONES[zi].id)) {
+      best = ZONE_CELL_INDICES[zi];
+    }
   }
-  return d;
+  return best;
 }
 
 function renderMap() {
   const pct = (state.completed.length / ZONES.length) * 100;
   document.getElementById('main-progress').style.width = pct + '%';
 
-  const nodesSvg = ZONES.map((zone, idx) => {
-    const isDone = state.completed.includes(zone.id);
-    const isAvailable = idx === 0 || state.completed.includes(ZONES[idx-1].id);
-    const isLocked = !isAvailable && !isDone;
-    const pos = BOARD_NODES[idx];
-    const cls = 'board-node' + (isLocked ? ' locked' : '') + (isDone ? ' completed' : '');
-    const clickAttr = isLocked ? '' : `onclick="startZone(ZONES[${idx}])"`;
-    const onEnter = `onmouseenter="showZoneDetail(${idx})"`;
+  // Restaurar posición desde estado (sin animación)
+  charCellIdx = getCharCellIdxForState();
+
+  const VW = 1000, VH = 707;
+
+  // Casillas blancas decorativas
+  const decorCells = PATH_CELLS.map((cell, idx) => {
+    if (ZONE_CELL_INDICES.includes(idx) || idx === 0 || idx === CHEST_CELL_IDX) return '';
+    return `<ellipse cx="${cell.x}" cy="${cell.y}" rx="28" ry="24"
+      fill="white" fill-opacity="0.12" stroke="white" stroke-opacity="0.25" stroke-width="1"/>`;
+  }).join('');
+
+  // Zonas jugables
+  const zonesSvg = ZONES.map((zone, zi) => {
+    const node        = ZONE_NODES[zi];
+    const isDone      = state.completed.includes(zone.id);
+    const isAvailable = zi === 0 || state.completed.includes(ZONES[zi - 1].id);
+    const isLocked    = !isAvailable && !isDone;
 
     let badge = '';
     if (isDone) {
-      badge = `<circle class="board-node-badge-bg board-node-check-bg" cx="${pos.x+22}" cy="${pos.y-22}" r="11"/>
-                <text class="board-node-badge" x="${pos.x+22}" y="${pos.y-21}" fill="white">✓</text>`;
+      badge = `
+        <circle cx="${node.x + 28}" cy="${node.y - 28}" r="15"
+          fill="#27ae60" stroke="white" stroke-width="2.5"/>
+        <text x="${node.x + 28}" y="${node.y - 23}" text-anchor="middle"
+          font-size="16" fill="white" font-weight="bold">✓</text>`;
     } else if (isLocked) {
-      badge = `<circle class="board-node-badge-bg board-node-lock-bg" cx="${pos.x+22}" cy="${pos.y-22}" r="11"/>
-                <text class="board-node-badge" x="${pos.x+22}" y="${pos.y-21}" fill="white">🔒</text>`;
+      badge = `
+        <circle cx="${node.x + 28}" cy="${node.y - 28}" r="15"
+          fill="rgba(0,0,0,0.5)" stroke="white" stroke-width="2.5"/>
+        <text x="${node.x + 28}" y="${node.y - 23}" text-anchor="middle"
+          font-size="14" fill="white">🔒</text>`;
     }
 
+    const pulseClass = (!isLocked && !isDone) ? 'zone-pulse' : '';
+    const opacity    = isLocked ? '0.4' : '0.92';
+    const clickAttr  = !isLocked
+      ? `onclick="handleZoneClick(${zi})" style="cursor:pointer"`
+      : `style="cursor:not-allowed"`;
+
     return `
-      <g class="${cls}" ${clickAttr} ${onEnter} tabindex="0" role="button" aria-label="${zone.title}">
-        <circle class="board-node-circle" cx="${pos.x}" cy="${pos.y}" r="30"></circle>
-        <text class="board-node-icon" x="${pos.x}" y="${pos.y+1}">${zone.icon}</text>
+      <g class="zone-cell-group" onmouseenter="showZoneDetail(${zi})" ${clickAttr}>
+        <ellipse cx="${node.x}" cy="${node.y}" rx="48" ry="42"
+          fill="${node.color}" opacity="${opacity}"
+          stroke="white" stroke-width="${isDone ? 4 : 2.5}"
+          class="${pulseClass}"/>
+        <text x="${node.x}" y="${node.y - 5}" text-anchor="middle"
+          dominant-baseline="central" font-size="26"
+          style="pointer-events:none">${zone.icon}</text>
         ${badge}
-        <text class="board-node-label" x="${pos.x}" y="${pos.y+48}">Zona ${zone.id}</text>
       </g>`;
   }).join('');
 
-  const mapEl = document.getElementById('island-map');
-  mapEl.innerHTML = `
-    <svg class="board-svg" viewBox="0 0 700 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mapa de la Isla del Tesoro">
-      <defs>
-        <pattern id="oceanDots" width="46" height="46" patternUnits="userSpaceOnUse">
-          <circle cx="6" cy="6" r="1.4" fill="rgba(255,255,255,0.06)"/>
-          <circle cx="30" cy="22" r="1.1" fill="rgba(255,255,255,0.05)"/>
-        </pattern>
-      </defs>
+  // Personaje 📱
+  const cPos    = getCellPos(charCellIdx);
+  const charSvg = buildCharSvg(cPos.x, cPos.y);
 
-      <!-- Océano de fondo -->
-      <rect x="0" y="0" width="700" height="560" fill="#0a3d62"/>
-      <rect x="0" y="0" width="700" height="560" fill="url(#oceanDots)"/>
-
-      <!-- Isla superior izquierda (inicio) -->
-      <path d="M0,0 L210,0 Q230,60 170,110 Q120,150 60,150 Q10,150 0,120 Z" fill="#3a8c4e"/>
-      <path d="M0,0 L210,0 Q225,55 175,100 Q125,140 65,142" fill="none" stroke="#dfc89a" stroke-width="10" opacity="0.55"/>
-      <circle cx="35" cy="35" r="20" fill="#2c6b3a"/>
-      <circle cx="60" cy="25" r="16" fill="#347a42"/>
-      <rect x="32" y="40" width="6" height="16" fill="#5c3414"/>
-
-      <!-- Isla superior derecha (volcán) -->
-      <path d="M700,0 L520,0 Q500,60 560,100 Q610,135 660,130 Q700,125 700,90 Z" fill="#3a8c4e"/>
-      <path d="M700,0 L520,0 Q505,55 565,95" fill="none" stroke="#dfc89a" stroke-width="10" opacity="0.55"/>
-      <polygon points="630,95 600,40 660,40" fill="#5c4536"/>
-      <polygon points="612,95 600,68 624,68" fill="#e05a2b"/>
-      <ellipse cx="600" cy="28" rx="14" ry="8" fill="rgba(255,255,255,0.5)"/>
-
-      <!-- Isla inferior derecha (cofre) -->
-      <path d="M700,560 L480,560 Q460,500 530,460 Q610,415 700,425 Z" fill="#3a8c4e"/>
-      <path d="M700,560 L480,560 Q463,500 535,463" fill="none" stroke="#dfc89a" stroke-width="10" opacity="0.55"/>
-
-      <!-- Olas decorativas en mar abierto -->
-      <path d="M390,270 Q420,258 450,270 T510,273" stroke="rgba(255,255,255,0.12)" stroke-width="4" fill="none"/>
-      <path d="M400,300 Q430,290 460,300 T520,303" stroke="rgba(255,255,255,0.09)" stroke-width="4" fill="none"/>
-
-      <!-- Barquito -->
-      <g transform="translate(150,470)">
-        <ellipse cx="0" cy="18" rx="34" ry="8" fill="rgba(255,255,255,0.15)"/>
-        <path d="M-26,12 Q0,28 26,12 L18,2 L-18,2 Z" fill="#a9692f"/>
-        <line x1="0" y1="2" x2="0" y2="-26" stroke="#5c3414" stroke-width="3"/>
-        <path d="M0,-24 L0,2 L20,2 Z" fill="#f4ede1"/>
-      </g>
-
-      <!-- Camino entre casillas -->
-      <path d="${boardPathD()}" fill="none" stroke="#dfc89a" stroke-width="8" stroke-dasharray="2 14" stroke-linecap="round" opacity="0.85"/>
-
-      <!-- Nodo de inicio -->
-      <g>
-        <ellipse cx="${BOARD_START.x}" cy="${BOARD_START.y}" rx="38" ry="26" fill="white"/>
-        <text class="board-start-label" x="${BOARD_START.x}" y="${BOARD_START.y+5}">INICIO</text>
-      </g>
-
-      <!-- Cofre del tesoro al final -->
-      <g transform="translate(${BOARD_NODES[4].x + 90}, ${BOARD_NODES[4].y + 25})">
-        <circle r="40" fill="white"/>
-        <g transform="translate(-20,-15) scale(0.8)">
-          <ellipse cx="20" cy="13" rx="22" ry="6" fill="#3a200c"/>
-          <rect x="0" y="14" width="40" height="18" rx="4" fill="#a9692f" stroke="#5c3414" stroke-width="1.5"/>
-          <path d="M0,15 Q0,0 20,0 Q40,0 40,15 Z" fill="#c98a3e" stroke="#5c3414" stroke-width="1.5"/>
-          <rect x="16" y="6" width="8" height="6" rx="1.5" fill="#f4c430"/>
-        </g>
-      </g>
-
-      ${nodesSvg}
-    </svg>
-  `;
+  document.getElementById('island-map').innerHTML = `
+    <div class="map-img-wrap">
+      <img src="SPRITES.png" alt="Mapa del Tesoro"
+        style="display:block;width:100%;height:auto;border-radius:18px 18px 0 0;"/>
+      <svg id="map-svg-overlay" viewBox="0 0 ${VW} ${VH}"
+        xmlns="http://www.w3.org/2000/svg"
+        style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;">
+        <defs>
+          <style>
+            .zone-cell-group { pointer-events:all; }
+            .zone-pulse {
+              animation: zonePulse 2.2s ease-in-out infinite;
+            }
+            @keyframes zonePulse {
+              0%,100% { filter: drop-shadow(0 0 5px rgba(255,255,255,0.6)); }
+              50%      { filter: drop-shadow(0 0 16px rgba(255,255,255,1)); }
+            }
+          </style>
+        </defs>
+        ${decorCells}
+        ${zonesSvg}
+        ${charSvg}
+      </svg>
+    </div>
+    <div class="board-legend" id="zone-detail">
+      <p>Toca una zona de color para empezar 🧭</p>
+    </div>`;
 
   showZoneDetail(firstActionableZoneIdx());
+}
+
+function buildCharSvg(cx, cy) {
+  return `
+    <g id="map-character" transform="translate(${cx},${cy - 52})">
+      <ellipse cx="0" cy="52" rx="20" ry="7" fill="rgba(0,0,0,0.3)"/>
+      <rect x="-15" y="0" width="30" height="44" rx="6"
+        fill="#1a1a2e" stroke="#4fc3f7" stroke-width="2.5"/>
+      <rect x="-10" y="5" width="20" height="30" rx="3" fill="#e3f2fd"/>
+      <circle cx="-4" cy="14" r="3"   fill="#1a1a2e"/>
+      <circle cx="4"  cy="14" r="3"   fill="#1a1a2e"/>
+      <circle cx="-3" cy="13" r="1.1" fill="white"/>
+      <circle cx="5"  cy="13" r="1.1" fill="white"/>
+      <path d="M -5,22 Q 0,27 5,22" stroke="#1a1a2e" stroke-width="2.2"
+        fill="none" stroke-linecap="round"/>
+      <circle cx="0" cy="40" r="3"   fill="#37474f" stroke="#546e7a" stroke-width="1"/>
+      <circle cx="0" cy="2"  r="1.5" fill="#37474f"/>
+      <animateTransform attributeName="transform" type="translate"
+        values="0,0; 0,-5; 0,0" dur="2s" repeatCount="indefinite" additive="sum"/>
+    </g>`;
+}
+
+// ── Clic en zona: camina hasta allí, muestra botón "¡Jugar!" ──────────────
+function handleZoneClick(zoneIdx) {
+  const zone          = ZONES[zoneIdx];
+  const targetCellIdx = ZONE_CELL_INDICES[zoneIdx];
+
+  // Si ya está ahí (zona completada o vuelta al mapa), jugar directo
+  if (charCellIdx === targetCellIdx) {
+    startZone(zone);
+    return;
+  }
+
+  // Bloquear interacción durante la animación
+  const svg = document.getElementById('map-svg-overlay');
+  if (svg) svg.style.pointerEvents = 'none';
+  // Ocultar leyenda durante el viaje
+  document.getElementById('zone-detail').innerHTML =
+    '<p>🚶 ¡Caminando hacia la zona…</p>';
+
+  animateCellByCell(charCellIdx, targetCellIdx, () => {
+    charCellIdx = targetCellIdx;
+    if (svg) svg.style.pointerEvents = '';
+    // Llegó — jugar directamente
+    startZone(zone);
+  });
+}
+
+// Muestra en la leyenda el botón para arrancar el juego
+function showZonePlayPrompt(zone) {
+  document.getElementById('zone-detail').innerHTML = `
+    <p><strong>${zone.icon} ${zone.title}</strong> — ${zone.subtitle}</p>
+    <button class="btn-main" style="margin-top:8px;font-size:1rem;padding:10px 28px"
+      onclick="startZone(ZONES[${ZONES.indexOf(zone)}])">
+      ¡Jugar esta zona! 🎮
+    </button>`;
+}
+
+// ── Al completar la última zona: camina al cofre y muestra pantalla final ──
+function walkToChestThenFinish() {
+  showScreen('screen-map');
+  renderMap();
+
+  setTimeout(() => {
+    const svg = document.getElementById('map-svg-overlay');
+    if (svg) svg.style.pointerEvents = 'none';
+    document.getElementById('zone-detail').innerHTML =
+      '<p>🎉 ¡Todas las zonas completadas! Corriendo al cofre…</p>';
+
+    animateCellByCell(charCellIdx, CHEST_CELL_IDX, () => {
+      charCellIdx = CHEST_CELL_IDX;
+      setTimeout(() => showFinal(), 700);
+    });
+  }, 400);
+}
+
+// ── Animación celda a celda ────────────────────────────────────────────────
+function animateCellByCell(fromIdx, toIdx, callback) {
+  if (fromIdx >= toIdx) { callback(); return; }
+
+  let current = fromIdx;
+
+  function step() {
+    current++;
+    const pos  = getCellPos(current);
+    const char = document.getElementById('map-character');
+    if (!char) { callback(); return; }
+
+    // Mover el grupo SVG actualizando el atributo transform
+    char.setAttribute('transform', `translate(${pos.x},${pos.y - 52})`);
+
+    if (current >= toIdx) {
+      setTimeout(callback, 400);
+    } else {
+      setTimeout(step, 340);
+    }
+  }
+  step();
 }
 
 function firstActionableZoneIdx() {
@@ -285,21 +428,20 @@ function firstActionableZoneIdx() {
 }
 
 function showZoneDetail(idx) {
-  const zone = ZONES[idx];
-  const isDone = state.completed.includes(zone.id);
-  const isAvailable = idx === 0 || state.completed.includes(ZONES[idx-1].id);
-  const isLocked = !isAvailable && !isDone;
-  const detail = document.getElementById('zone-detail');
-  let statusLine = '';
-  if (isDone) {
-    const sc = state.scores[zone.id];
-    statusLine = `✅ ¡Completada! ${sc ? sc.earned + '/' + sc.max + ' pts' : ''}`;
-  } else if (isLocked) {
-    statusLine = '🔒 Completa la zona anterior para desbloquear';
-  } else {
-    statusLine = '👉 Toca la casilla para jugar';
-  }
-  detail.innerHTML = `<p><strong>${zone.icon} ${zone.title}</strong> — ${zone.subtitle}<br>${statusLine}</p>`;
+  const zone        = ZONES[idx];
+  const isDone      = state.completed.includes(zone.id);
+  const isAvailable = idx === 0 || state.completed.includes(ZONES[idx - 1].id);
+  const isLocked    = !isAvailable && !isDone;
+  const detail      = document.getElementById('zone-detail');
+
+  let statusLine = isDone
+    ? `✅ ¡Completada! ${state.scores[zone.id] ? state.scores[zone.id].earned + '/' + state.scores[zone.id].max + ' pts' : ''}`
+    : isLocked
+      ? '🔒 Completa la zona anterior para desbloquear'
+      : '👉 Toca la zona para jugar';
+
+  detail.innerHTML =
+    `<p><strong>${zone.icon} ${zone.title}</strong> — ${zone.subtitle}<br>${statusLine}</p>`;
 }
 
 // =================== FEEDBACK ===================
@@ -355,6 +497,7 @@ function completeZone(maxScore) {
   if (!state.completed.includes(zone.id)) state.completed.push(zone.id);
   state.scores[zone.id] = { earned: state.gameScore, max: maxScore };
   saveState();
+
   renderProtocol(zone);
 }
 
@@ -474,7 +617,7 @@ function renderProtocol(zone) {
 
     <div style="text-align:center; margin-top:10px">
       ${allDone
-        ? `<button class="btn-main" onclick="showFinal()">🏆 Ver mi tesoro final</button>`
+        ? `<button class="btn-main" onclick="walkToChestThenFinish()">🏆 ¡Ir al cofre! 🎉</button>`
         : `<button class="btn-main" onclick="showMap()">Continuar en el mapa →</button>`
       }
       <br><button class="btn-secondary" onclick="startZone(state.currentZone)" style="margin-top:10px">Repetir zona</button>
